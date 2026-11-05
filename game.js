@@ -10537,9 +10537,10 @@ const BLOCK = {
                         if (curSlot.type === BLOCK.BOW) {
                             // posed every frame below (it moves as you draw)
                         } else if (TOOLS[curSlot.type] && TOOLS[curSlot.type].kind === 'axe') {
-                            // An axe is turned further so the blade's cutting edge points forward, at what you chop, not back at you
-                            m.position.set(0.24, -0.2, -0.5);
-                            m.rotation.set(0.25, Math.PI - 1.6, -0.35, 'YXZ');
+                            // An axe is held like the 🪓 emoji: handle from the lower left up to the head on the right,
+                            // the blade's face toward you and its cutting edge pointing up and in, at what you chop
+                            m.position.set(0.24, -0.2, -0.55);
+                            m.rotation.set(0.05, 0.3, -0.25, 'YXZ');
                             m.scale.set(0.4, 0.4, 0.4);
                         } else if (TOOLS[curSlot.type] && ['pickaxe', 'shovel', 'hoe', 'sword', 'rod', 'crossbow'].includes(TOOLS[curSlot.type].kind)) {
                             // turned around so we see the back of the picture (its mirror image): handle bottom right,

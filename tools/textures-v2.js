@@ -605,15 +605,17 @@ const TOOL_SHAPES = {
   // Khmer pouthau: a broad bearded blade on the upper-left side (v < 0); its far curve is the cutting edge.
   // A small poll sits behind the handle on the other side.
   axe(u, v) {
+    // Shaped like the axe emoji: the head sits on the top end of the handle and a wedge blade fans out to the
+    // upper left, widening toward a curved cutting edge (flared above and below, like a Khmer pouthau)
     const reach = -v;
-    if (reach > 0.6 && reach <= 4.4) {
-      const top = 12.6 - reach * 0.32;                    // upper horn leans back slightly
-      const bottom = 9.8 - reach * 0.62;                  // bearded: the blade drops lower toward the edge
-      if (u >= bottom && u <= top) return reach >= 3.4 ? 'edge' : 'head';
+    if (reach > 0.6 && reach <= 4.1) {
+      const top = 10.3 + reach * 0.22 - (reach > 3.4 ? (reach - 3.4) * 0.6 : 0);     // the edge curves back at its tips
+      const bottom = 8.7 - reach * 0.55 + (reach > 3.4 ? (reach - 3.4) * 0.9 : 0);
+      if (u >= bottom && u <= top) return reach >= 3.0 ? 'edge' : 'head';
     }
-    if (v >= 0.6 && v <= 1.7 && u >= 10.6 && u <= 12.2) return 'head';   // poll
-    if (Math.abs(v) <= 0.6 && u >= 10.2 && u <= 12.8) return 'head';     // eye around the handle
-    return TOOL_PARTS.handle(u, v, 10.4);
+    if (v >= 0.6 && v <= 1.5 && u >= 9.0 && u <= 10.4) return 'head';    // small poll behind the handle
+    if (Math.abs(v) <= 0.6 && u >= 8.6 && u <= 10.8) return 'head';      // eye around the handle
+    return TOOL_PARTS.handle(u, v, 9.0);
   },
   // Spade: a rounded blade with a raised centre ridge
   shovel(u, v) {
