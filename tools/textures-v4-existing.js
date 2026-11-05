@@ -240,6 +240,12 @@ ART.BOW = icon((g) => {
   for (let t = 0; t <= 1; t += 0.02) { const a = -Math.PI / 4 + (t - 0.5) * 2.4; g.dot(Math.round(3 + Math.cos(a) * 10), Math.round(13 + Math.sin(a) * 10), 'bowWood'); g.dot(Math.round(3 + Math.cos(a) * 9.2), Math.round(13 + Math.sin(a) * 9.2), 'bowWood'); }
   g.line(4, 3, 13, 12, 'bowString'); g.rect(6, 7, 7, 8, 'rattan');
 }, Q);
+// The held-bow pose expects the bow's belly toward the upper left (string toward the lower right), as the old picture had it
+{
+  const m = ART.BOW, out = m.px.slice();
+  for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) for (let c = 0; c < 4; c++) out[(y * 16 + x) * 4 + c] = m.px[(y * 16 + (15 - x)) * 4 + c];
+  ART.BOW = { w: 16, h: 16, px: out };
+}
 ART.ARROW = icon((g) => {
   g.line(3, 12, 12, 3, 'shaft'); g.map(10, 1, ['.hhh', 'hhhh', '.hh.', '.h..'], { h: 'arrowHead' });
   g.map(1, 10, ['.f..', 'ff..', 'fff.', '.fff', '..f.'], { f: 'fletch' });

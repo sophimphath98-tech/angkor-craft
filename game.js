@@ -10541,7 +10541,7 @@ const BLOCK = {
                             m.position.set(0.24, -0.2, -0.5);
                             m.rotation.set(0.25, Math.PI - 1.6, -0.35, 'YXZ');
                             m.scale.set(0.4, 0.4, 0.4);
-                        } else if (TOOLS[curSlot.type]) {
+                        } else if (TOOLS[curSlot.type] && ['pickaxe', 'shovel', 'hoe', 'sword', 'rod', 'crossbow'].includes(TOOLS[curSlot.type].kind)) {
                             // turned around so we see the back of the picture (its mirror image): handle bottom right,
                             // head up toward the crosshair. (A negative scale would mirror it too but break its lighting.)
                             m.position.set(0.25, -0.19, -0.55);
@@ -10590,13 +10590,15 @@ const BLOCK = {
             }
             if (this.isSwinging) {
                 this.swingProgress += dt * 6.5;
-                // Chopping arc: wind up, strike forward/down, return
-                const swingAngle = Math.sin(this.swingProgress * Math.PI);
-                const strike = Math.sin(Math.min(1, this.swingProgress) * Math.PI * 0.5);
-                this.handGroup.rotation.x = -swingAngle * 0.95;
-                this.handGroup.rotation.y = swingAngle * 0.35;
-                this.handGroup.rotation.z = -strike * swingAngle * 0.25;
-                this.handGroup.position.set(-swingAngle * 0.04, -swingAngle * 0.1, -swingAngle * 0.2);
+                // Chopping arc that stays on screen: the item swings in toward the crosshair, its head dipping onto the
+                // target, then comes back. (A big pitch around the camera used to throw it out of view mid-swing.)
+                const p = Math.min(1, this.swingProgress);
+                const swingAngle = Math.sin(p * Math.PI);                                   // out to the crosshair and back
+                const dip = p > 0.3 ? Math.sin((p - 0.3) / 0.7 * Math.PI) : 0;             // the head comes down onto the target
+                this.handGroup.rotation.x = swingAngle * 0.15 - dip * 0.3;
+                this.handGroup.rotation.y = swingAngle * 0.45;
+                this.handGroup.rotation.z = swingAngle * 0.2;
+                this.handGroup.position.set(-swingAngle * 0.14, swingAngle * 0.06 - dip * 0.04, 0);
                 if (this.swingProgress >= 1.0) {
                     this.isSwinging = false;
                     this.handGroup.rotation.set(0, 0, 0);
