@@ -5055,6 +5055,10 @@ const BLOCK = {
                 this.generateEndTerrain(chunk);
                 return this.finishChunk(chunk);
             }
+            if (isPatalaRegion(chunk.worldX + 8, chunk.worldZ + 8)) {
+                generatePatalaChunk(chunk);
+                return this.finishChunk(chunk);
+            }
 
             const stronghold = getStronghold();
             const nearStronghold = Math.abs(chunk.worldX + 8 - stronghold.x) < 26 && Math.abs(chunk.worldZ + 8 - stronghold.z) < 26;
@@ -6337,7 +6341,7 @@ const BLOCK = {
         }
 
         update(dt) {
-            if (inEnd) { this.level += (0 - this.level) * Math.min(1, dt * 2); this.rainLines.visible = false; this.flash = 0; this.flashEl.style.opacity = 0; audio.setRain(0, false); return; }
+            if (inEnd || inPatala) { this.level += (0 - this.level) * Math.min(1, dt * 2); this.rainLines.visible = false; this.flash = 0; this.flashEl.style.opacity = 0; audio.setRain(0, false); return; }
             if (multiplayer.role !== 'client') {                    // the host (or a solo player) runs the cycle; guests are told
                 this.timer -= dt;
                 if (this.timer <= 0) this.set(this.nextState());
@@ -6958,6 +6962,7 @@ const BLOCK = {
     class HorseMob extends Mob {
         constructor(x, y, z, scene) {
             super('horse', x, y, z, scene);
+            this.rideEye = 1.0; this.rideSpeed = 1.7;
             this.width = 0.85;
             this.height = ENTITY_PROFILES.horse.height;
             this.health = ENTITY_REGISTRY.horse.hp;
@@ -8587,6 +8592,12 @@ const BLOCK = {
                 const pivot = new THREE.Group(); pivot.position.set(ax, 2.1, 0);
                 const arm = box(0.3, 1.55, 0.3, limb); arm.geometry.translate(0, -0.72, 0);
                 pivot.add(arm); this.group.add(pivot); this.arms.push(pivot);
+                if (ax > 0) {                                     // Dvarapala: a gada club held point-down in the right hand
+                    const wood = new THREE.MeshLambertMaterial({ color: 0x6e5a44 });
+                    const shaft = box(0.12, 1.2, 0.12, wood); shaft.position.set(0.05, -1.45, 0.25); pivot.add(shaft);
+                    const knob = box(0.32, 0.42, 0.32, wood); knob.position.set(0.05, -2.05, 0.25); pivot.add(knob);
+                    const band = box(0.34, 0.08, 0.34, gold); band.position.set(0.05, -1.8, 0.25); pivot.add(band);
+                }
             });
             this.legs = [];
             [-0.24, 0.24].forEach(lx => {
@@ -8705,6 +8716,554 @@ const BLOCK = {
         if (!isCreative()) player.inventory.consumeSelectedItem();
         player.triggerSwing();
         return true;
+    }
+
+
+    // ==========================================
+    // KHMER CONTENT v2: NEW ANIMALS AND MONSTERS
+    //   water buffalo (krabei), elephant (domrei), village dog (chhkae), cat (chhma), monkey (sva), bat (prachiev)
+    //   crocodile (krapeu), cobra (pous vek), Ap (a flying ghost head), shadow ghost (khmoch sramaol)
+    // Faces are the redrawn 8x8 faces from art-data.js; bodies are mottled skins.
+    // ==========================================
+    const khBox = (w, h, d, m) => new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
+    const khSkin = (key, rgb, seed, amt = 16) => MobSkins.mat(key, 8, 8, MobSkins.mottle(rgb, seed, amt));
+    const khFace = (name, rgb, seed) => MobSkins.mat('new_' + name + '_face', 8, 8, MobSkins.mottle(rgb, seed, 8));
+    function khLegs(mob, mat, w, h, spots) {
+        mob.legs = [];
+        spots.forEach(([lx, lz]) => {
+            const l = khBox(w, h, w, mat); l.geometry.translate(0, -h / 2, 0);
+            l.position.set(lx, h, lz); mob.group.add(l); mob.legs.push(l);
+        });
+    }
+    Object.assign(ENTITY_PROFILES, {
+        buffalo: { height: 1.5, heightOffset: 0 }, elephant: { height: 2.7, heightOffset: 0 }, dog: { height: 0.85, heightOffset: 0 },
+        cat: { height: 0.7, heightOffset: 0 }, monkey: { height: 0.9, heightOffset: 0 }, bat: { height: 0.5, heightOffset: 0 }
+    });
+    Object.assign(ENTITY_REGISTRY, {
+        buffalo: { name: 'Water buffalo', hp: 15, drops: [{ item: BLOCK.RAW_BEEF, chance: 1, min: 1, max: 3 }, { item: BLOCK.LEATHER, chance: 0.9, min: 0, max: 2 }] },
+        elephant: { name: 'Elephant', hp: 40, drops: [{ item: BLOCK.LEATHER, chance: 1, min: 2, max: 4 }] },
+        crocodile: { name: 'Crocodile', hp: 24, drops: [{ item: BLOCK.LEATHER, chance: 1, min: 1, max: 3 }, { item: BLOCK.RAW_FISH, chance: 0.5, min: 1, max: 1 }] },
+        cobra: { name: 'Cobra', hp: 8, drops: [{ item: BLOCK.STRING, chance: 0.5, min: 1, max: 1 }] },
+        ap: { name: 'Ap', hp: 16, drops: [{ item: BLOCK.ROTTEN_FLESH, chance: 1, min: 0, max: 2 }, { item: BLOCK.FEATHER, chance: 0.4, min: 1, max: 2 }] },
+        shadow: { name: 'Shadow ghost', hp: 40, drops: [{ item: BLOCK.NAGA_PEARL, chance: 0.6, min: 1, max: 1 }] }
+    });
+    Object.assign(ANIMAL_DIET, { buffalo: [BLOCK.WHEAT, BLOCK.RICE_STRAW], elephant: [BLOCK.BANANA, BLOCK.SUGAR], monkey: [BLOCK.BANANA, BLOCK.MANGO] });
+    Object.assign(IDLE_SOUNDS, { buffalo: 'cow_idle', elephant: 'horse_idle', dog: 'pig_idle', cat: 'chicken_idle' });
+
+    // Water buffalo: slate grey, long swept-back horns, likes water; milk it with a bucket
+    class BuffaloMob extends Mob {
+        constructor(x, y, z, scene) {
+            super('buffalo', x, y, z, scene);
+            this.breedFood = BLOCK.WHEAT; this.loot = null;
+            this.width = 1.0; this.height = ENTITY_PROFILES.buffalo.height; this.health = 15; this.speed = 1.3;
+        }
+        buildModel() {
+            const GREY = [86, 86, 92];
+            const hide = khSkin('kh_buffalo_hide', GREY, 501, 14), face = khFace('buffalo', GREY, 503);
+            const horn = new THREE.MeshLambertMaterial({ color: 0xd8d0bc });
+            const body = khBox(0.86, 0.8, 1.3, hide); body.position.set(0, 0.85, 0);
+            const head = skinnedBox(0.52, 0.5, 0.5, face, hide); head.position.set(0, 1.0, 0.82);
+            this.group.add(body, head);
+            [-1, 1].forEach(sx => {                                     // horns sweep out and back
+                const a = khBox(0.36, 0.1, 0.12, horn); a.position.set(sx * 0.4, 1.3, 0.78); this.group.add(a);
+                const b = khBox(0.1, 0.1, 0.3, horn); b.position.set(sx * 0.58, 1.33, 0.66); this.group.add(b);
+            });
+            khLegs(this, hide, 0.24, 0.5, [[-0.28, 0.42], [0.28, 0.42], [-0.28, -0.42], [0.28, -0.42]]);
+        }
+    }
+
+    // Elephant: rideable with a saddle (a howdah), eats bananas
+    class ElephantMob extends Mob {
+        constructor(x, y, z, scene) {
+            super('elephant', x, y, z, scene);
+            this.breedFood = BLOCK.BANANA; this.loot = null;
+            this.width = 1.6; this.height = ENTITY_PROFILES.elephant.height; this.health = 40; this.speed = 1.2;
+            this.rideEye = 1.7; this.rideSpeed = 1.35;
+        }
+        buildModel() {
+            const GREY = [120, 120, 128];
+            const hide = khSkin('kh_elephant_hide', GREY, 511, 12), face = khFace('elephant', GREY, 513);
+            const tusk = new THREE.MeshLambertMaterial({ color: 0xf4eedc });
+            const body = khBox(1.3, 1.25, 2.0, hide); body.position.set(0, 1.55, 0);
+            const head = skinnedBox(0.95, 0.95, 0.8, face, hide); head.position.set(0, 1.95, 1.2);
+            const trunk = khBox(0.26, 1.1, 0.26, hide); trunk.position.set(0, 1.1, 1.55);
+            this.group.add(body, head, trunk);
+            [-1, 1].forEach(sx => {
+                const ear = khBox(0.08, 0.8, 0.6, hide); ear.position.set(sx * 0.55, 2.0, 1.0); this.group.add(ear);
+                const t = khBox(0.1, 0.1, 0.5, tusk); t.position.set(sx * 0.24, 1.45, 1.6); t.rotation.x = -0.4; this.group.add(t);
+            });
+            this.howdah = new THREE.Group();
+            const cloth = khBox(1.36, 0.08, 1.2, new THREE.MeshLambertMaterial({ color: 0xb02828 })); cloth.position.set(0, 2.2, -0.1);
+            const seat = khBox(0.9, 0.4, 0.9, new THREE.MeshLambertMaterial({ color: 0x8a2a1a })); seat.position.set(0, 2.44, -0.1);
+            const roof = khBox(1.0, 0.1, 1.0, new THREE.MeshLambertMaterial({ color: 0xf2c64a })); roof.position.set(0, 2.7, -0.1);
+            this.howdah.add(cloth, seat, roof); this.howdah.visible = false; this.group.add(this.howdah);
+            khLegs(this, hide, 0.42, 0.95, [[-0.42, 0.65], [0.42, 0.65], [-0.42, -0.65], [0.42, -0.65]]);
+        }
+        animateLimbs(dt) { super.animateLimbs(dt); if (this.howdah) this.howdah.visible = !!this.saddled; }
+    }
+
+    // Village dog: tame it with a bone; a tame dog follows you and bites monsters near you
+    class DogMob extends Mob {
+        constructor(x, y, z, scene) {
+            super('dog', x, y, z, scene);
+            this.width = 0.6; this.height = ENTITY_PROFILES.dog.height; this.health = 8; this.speed = 2.6;
+            this.biteCd = 0;
+        }
+        buildModel() {
+            const TAN = [200, 144, 80];
+            const fur = khSkin('kh_dog_fur', TAN, 521, 14), face = khFace('dog', TAN, 523);
+            const body = khBox(0.42, 0.42, 0.85, fur); body.position.set(0, 0.6, 0);
+            const head = skinnedBox(0.4, 0.4, 0.36, face, fur); head.position.set(0, 0.85, 0.55);
+            const tail = khBox(0.1, 0.1, 0.4, fur); tail.position.set(0, 0.78, -0.55); tail.rotation.x = 0.6;
+            this.collar = khBox(0.44, 0.08, 0.1, new THREE.MeshLambertMaterial({ color: 0xc02828 })); this.collar.position.set(0, 0.7, 0.4); this.collar.visible = false;
+            this.group.add(body, head, tail, this.collar);
+            khLegs(this, fur, 0.14, 0.4, [[-0.13, 0.28], [0.13, 0.28], [-0.13, -0.28], [0.13, -0.28]]);
+        }
+        updateAI(dt, player) { khPetAI(this, dt, player, BLOCK.BONE, true); }
+    }
+    // Cat: tame it with fish; laterite spirits keep away from a tame cat
+    class CatMob extends Mob {
+        constructor(x, y, z, scene) {
+            super('cat', x, y, z, scene);
+            this.width = 0.45; this.height = ENTITY_PROFILES.cat.height; this.health = 10; this.speed = 2.4;
+        }
+        buildModel() {
+            const GREY = [122, 122, 122];
+            const fur = khSkin('kh_cat_fur', GREY, 531, 18), face = khFace('cat', GREY, 533);
+            const body = khBox(0.32, 0.32, 0.7, fur); body.position.set(0, 0.45, 0);
+            const head = skinnedBox(0.34, 0.3, 0.3, face, fur); head.position.set(0, 0.62, 0.45);
+            const tail = khBox(0.08, 0.08, 0.45, fur); tail.position.set(0, 0.6, -0.5); tail.rotation.x = -0.7;
+            this.group.add(body, head, tail);
+            khLegs(this, fur, 0.1, 0.3, [[-0.1, 0.22], [0.1, 0.22], [-0.1, -0.22], [0.1, -0.22]]);
+        }
+        updateAI(dt, player) { khPetAI(this, dt, player, BLOCK.RAW_FISH, false); }
+    }
+    // Tame pets: right-click with their food tames them (1 in 3 tries); a tame pet follows and (the dog) defends you
+    function khPetAI(pet, dt, player, food, defends) {
+        pet.biteCd = Math.max(0, (pet.biteCd || 0) - dt);
+        if (pet.tamed) {
+            if (pet.collar) pet.collar.visible = true;
+            if (defends) {
+                let foe = null, best = 7;
+                for (const m of mobMgr.mobs) {
+                    if (!m.isHostile || m.isDead) continue;
+                    const d = m.pos.distanceTo(pet.pos);
+                    if (d < best && m.pos.distanceTo(player.pos) < 12) { best = d; foe = m; }
+                }
+                if (foe) {
+                    mobMgr.walkToward(pet, foe.pos, 1.3);
+                    if (best < 1.4 && pet.biteCd <= 0) { pet.biteCd = 0.8; foe.takeDamage(4, new THREE.Vector3().subVectors(foe.pos, pet.pos).setY(0).normalize()); }
+                    return;
+                }
+            }
+            const d = Math.hypot(player.pos.x - pet.pos.x, player.pos.z - pet.pos.z);
+            if (d > 24) { pet.pos.set(player.pos.x + 1, player.pos.y, player.pos.z + 1); return; }      // catches up by running
+            if (d > 3.5) { mobMgr.walkToward(pet, player.pos, 1.0); return; }
+            pet.isMoving = false; pet.vel.x *= 0.5; pet.vel.z *= 0.5;
+            return;
+        }
+        khWander(pet, dt);
+    }
+    function khWander(mob, dt) {
+        mob.moveTimer -= dt;
+        if (mob.moveTimer <= 0) { mob.moveTimer = 2 + Math.random() * 4; mob.isMoving = Math.random() < 0.6; mob.yaw += (Math.random() - 0.5) * 1.5; }
+        if (mob.isMoving) { mob.vel.x = Math.sin(mob.yaw) * mob.speed; mob.vel.z = Math.cos(mob.yaw) * mob.speed; }
+    }
+
+    // Monkey: lives near temples and forests; now and then snatches a piece of food from your hand and runs off
+    class MonkeyMob extends Mob {
+        constructor(x, y, z, scene) {
+            super('monkey', x, y, z, scene);
+            this.breedFood = BLOCK.BANANA; this.loot = null;
+            this.width = 0.5; this.height = ENTITY_PROFILES.monkey.height; this.health = 10; this.speed = 2.6;
+            this.stealCd = 20;
+        }
+        buildModel() {
+            const BROWN = [122, 90, 58];
+            const fur = khSkin('kh_monkey_fur', BROWN, 541, 14), face = khFace('monkey', BROWN, 543);
+            const body = khBox(0.4, 0.5, 0.3, fur); body.position.set(0, 0.55, 0);
+            const head = skinnedBox(0.38, 0.36, 0.34, face, fur); head.position.set(0, 0.95, 0.04);
+            const tail = khBox(0.07, 0.07, 0.6, fur); tail.position.set(0, 0.5, -0.4); tail.rotation.x = -0.9;
+            this.group.add(body, head, tail);
+            khLegs(this, fur, 0.12, 0.32, [[-0.11, 0.05], [0.11, 0.05]]);
+            [-0.26, 0.26].forEach(ax => { const a = khBox(0.1, 0.45, 0.1, fur); a.position.set(ax, 0.55, 0.05); this.group.add(a); });
+        }
+        updateAI(dt, player) {
+            this.stealCd -= dt;
+            const held = player.inventory.getSelectedSlot();
+            const d = this.pos.distanceTo(player.pos);
+            if (this.fleeT > 0) {
+                this.fleeT -= dt;
+                mobMgr.walkToward(this, new THREE.Vector3(2 * this.pos.x - player.pos.x, 0, 2 * this.pos.z - player.pos.z), 1.4);
+                return;
+            }
+            if (held && held.count > 0 && FOOD[held.type] && d < 7) {
+                if (d > 1.3) { mobMgr.walkToward(this, player.pos, 1.1); return; }
+                if (this.stealCd <= 0 && !isCreative()) {
+                    this.stealCd = 40; this.fleeT = 6;
+                    const t = held.type;
+                    player.inventory.consumeSelectedItem();
+                    showNotification(`ស្វាលួច${BLOCK_NAMES[t]}របស់អ្នក!`);
+                    return;
+                }
+            }
+            if (!(mobMgr.animalAI(this, dt, player, particleMgr))) khWander(this, dt);
+        }
+    }
+
+    // Bat: flutters about at night and in caves, harmless
+    class BatMob extends Mob {
+        constructor(x, y, z, scene) {
+            super('bat', x, y + 1.5, z, scene);
+            this.width = 0.4; this.height = 0.5; this.health = 6; this.speed = 2.2; this.noGravity = true;
+            this.flapT = 0; this.loot = null;
+        }
+        buildModel() {
+            const fur = khSkin('kh_bat_fur', [58, 44, 48], 551, 10), face = khFace('bat', [58, 44, 48], 553);
+            const body = skinnedBox(0.3, 0.3, 0.3, face, fur); body.position.set(0, 0.25, 0);
+            this.group.add(body);
+            this.wings = [-1, 1].map(sx => { const w = khBox(0.45, 0.04, 0.3, fur); w.position.set(sx * 0.35, 0.3, 0); this.group.add(w); return w; });
+        }
+        updateAI(dt, player, timeEngine, pm, world) {
+            this.flapT += dt * 18;
+            this.wings.forEach((w, i) => { w.rotation.z = Math.sin(this.flapT) * 0.7 * (i ? 1 : -1); });
+            this.moveTimer -= dt;
+            if (this.moveTimer <= 0) { this.moveTimer = 0.6 + Math.random() * 1.2; this.yaw = Math.random() * Math.PI * 2; this.vy = (Math.random() - 0.45) * 2.2; }
+            const ground = surfaceHeightAt(world, this.pos.x, this.pos.z, this.pos.y);
+            if (this.pos.y < ground + 1.5) this.vy = Math.abs(this.vy || 1);
+            if (this.pos.y > ground + 7) this.vy = -Math.abs(this.vy || 1);
+            this.vel.set(Math.sin(this.yaw) * this.speed, this.vy || 0, Math.cos(this.yaw) * this.speed);
+            this.isMoving = true;
+        }
+    }
+
+    // Crocodile: waits on river banks, fast in short bursts, hits hard
+    class CrocodileMob extends ZombieMob {
+        constructor(x, y, z, scene) {
+            super(x, y, z, scene);
+            this.type = 'crocodile';
+            this.width = 0.9; this.height = 0.6; this.health = 24; this.speed = 2.4; this.attackDamage = 5;
+            this.burnsInDaylight = false; this.loot = null;
+        }
+        buildModel() {
+            const GREEN = [74, 106, 52];
+            const hide = MobSkins.mat('kh_croc_hide', 8, 8, (px, w, hg) => {
+                MobSkins.mottle(GREEN, 561, 16)(px, w, hg);
+                for (let x = 0; x < w; x += 2) px(x, 0, 'rgb(52,80,36)');          // ridged back
+            });
+            const face = khFace('crocodile', GREEN, 563);
+            const body = khBox(0.7, 0.4, 1.7, hide); body.position.set(0, 0.32, 0);
+            const head = skinnedBox(0.5, 0.32, 0.5, face, hide); head.position.set(0, 0.34, 1.05);
+            const snout = khBox(0.36, 0.18, 0.5, hide); snout.position.set(0, 0.28, 1.5);
+            const tail = khBox(0.36, 0.26, 1.1, hide); tail.position.set(0, 0.28, -1.35);
+            this.group.add(body, head, snout, tail);
+            khLegs(this, hide, 0.18, 0.2, [[-0.42, 0.55], [0.42, 0.55], [-0.42, -0.55], [0.42, -0.55]]);
+            this.arms = [];
+        }
+    }
+    // Cobra: a small, quick snake with a spread hood, in forests and caves
+    class CobraMob extends ZombieMob {
+        constructor(x, y, z, scene) {
+            super(x, y, z, scene);
+            this.type = 'cobra';
+            this.width = 0.4; this.height = 0.7; this.health = 8; this.speed = 2.2; this.attackDamage = 3;
+            this.burnsInDaylight = false; this.loot = null;
+        }
+        buildModel() {
+            const DARK = [58, 58, 48];
+            const scale = khSkin('kh_cobra_scale', DARK, 571, 12), face = khFace('cobra', DARK, 573);
+            const coil = khBox(0.5, 0.18, 0.5, scale); coil.position.set(0, 0.09, 0);
+            const neck = khBox(0.14, 0.45, 0.14, scale); neck.position.set(0, 0.4, 0.1);
+            const hood = skinnedBox(0.4, 0.34, 0.08, face, scale); hood.position.set(0, 0.62, 0.14);
+            const tail = khBox(0.12, 0.12, 0.5, scale); tail.position.set(0.2, 0.06, -0.35);
+            this.group.add(coil, neck, hood, tail);
+            this.legs = []; this.arms = [];
+        }
+    }
+    // Ap: a floating ghost head trailing its entrails; flies at night, burns away at sunrise
+    class ApMob extends ZombieMob {
+        constructor(x, y, z, scene) {
+            super(x, y + 2, z, scene);
+            this.type = 'ap';
+            this.width = 0.5; this.height = 0.9; this.health = 16; this.speed = 2.6; this.attackDamage = 3;
+            this.noGravity = true; this.burnsInDaylight = true; this.loot = null;
+        }
+        buildModel() {
+            const SKIN = [216, 212, 200];
+            const face = khFace('ap', SKIN, 581), hair = new THREE.MeshLambertMaterial({ color: 0x0c0a0a });
+            const head = skinnedBox(0.5, 0.5, 0.5, face, hair); head.position.set(0, 0.6, 0);
+            this.group.add(head);
+            const gut = new THREE.MeshLambertMaterial({ color: 0xb02030, emissive: 0x300000 });
+            this.trail = [0, 1, 2].map(i => { const g = khBox(0.12, 0.25, 0.12, gut); g.position.set((i - 1) * 0.1, 0.2 - i * 0.18, -0.05 * i); this.group.add(g); return g; });
+            this.legs = []; this.arms = [];
+        }
+        updateAI(dt, player, timeEngine, pm, world) {
+            const target = player.pos.clone().add(new THREE.Vector3(0, 1.3, 0));
+            const d = target.distanceTo(this.pos);
+            this.yaw = Math.atan2(target.x - this.pos.x, target.z - this.pos.z);
+            const dir = target.clone().sub(this.pos).normalize();
+            this.vel.set(dir.x * this.speed, dir.y * this.speed, dir.z * this.speed);
+            if (!isSolid(world.getBlock(Math.floor(this.pos.x), Math.floor(this.pos.y + 1), Math.floor(this.pos.z))) && d > 12) this.vel.y += 0.4;
+            this.attackCd = Math.max(0, (this.attackCd || 0) - dt);
+            if (d < 1.3 && this.attackCd <= 0 && !player.dead) { this.attackCd = 1.2; player.takeDamage(this.attackDamage, 'zombie'); }
+            this.trail.forEach((g, i) => { g.rotation.z = Math.sin(performance.now() / 200 + i) * 0.4; });
+            this.isMoving = true;
+        }
+    }
+    // Shadow ghost: tall and dark; when hurt it vanishes and reappears a few blocks away; drops a naga pearl
+    class ShadowMob extends ZombieMob {
+        constructor(x, y, z, scene) {
+            super(x, y, z, scene);
+            this.type = 'shadow';
+            this.width = 0.6; this.height = 2.9; this.health = 40; this.speed = 2.2; this.attackDamage = 5;
+            this.burnsInDaylight = false; this.loot = null;
+        }
+        buildModel() {
+            const DARK = [26, 26, 32];
+            const body = khSkin('kh_shadow_body', DARK, 591, 10), face = khFace('shadow', DARK, 593);
+            const torso = khBox(0.5, 0.9, 0.3, body); torso.position.set(0, 2.0, 0);
+            const head = skinnedBox(0.5, 0.5, 0.5, face, body); head.position.set(0, 2.7, 0);
+            this.group.add(torso, head);
+            this.legs = [];
+            [-0.13, 0.13].forEach(lx => { const l = khBox(0.14, 1.55, 0.14, body); l.geometry.translate(0, -0.78, 0); l.position.set(lx, 1.55, 0); this.group.add(l); this.legs.push(l); });
+            this.arms = [];
+            [-0.33, 0.33].forEach(ax => {
+                const pivot = new THREE.Group(); pivot.position.set(ax, 2.4, 0);
+                const arm = khBox(0.12, 1.4, 0.12, body); arm.geometry.translate(0, -0.7, 0); pivot.add(arm);
+                this.group.add(pivot); this.arms.push(pivot);
+            });
+        }
+        takeDamage(amount, knockbackDir = null, source = 'attack') {
+            super.takeDamage(amount, knockbackDir, source);
+            if (this.isDead || Math.random() > 0.6) return;
+            for (let k = 0; k < 8; k++) {                                    // blink away
+                const nx = Math.floor(this.pos.x + (Math.random() - 0.5) * 16), nz = Math.floor(this.pos.z + (Math.random() - 0.5) * 16);
+                const ny = findSpawnSurface(world, nx, nz);
+                if (ny === null) continue;
+                for (let i = 0; i < 6; i++) particleMgr.spawnHeart(this.pos.x, this.pos.y + 1.5, this.pos.z);
+                this.pos.set(nx + 0.5, ny + 1, nz + 0.5);
+                break;
+            }
+        }
+    }
+    // A tame-able pet: right-click with its food
+    function tryTamePet(mob, slot) {
+        const food = mob.type === 'dog' ? BLOCK.BONE : mob.type === 'cat' ? BLOCK.RAW_FISH : null;
+        if (!food || !slot || slot.count <= 0 || slot.type !== food) return false;
+        if (mob.tamed) { mob.health = Math.min(20, mob.health + 4); }
+        else if (Math.random() < 0.34) { mob.tamed = true; mob.health = 20; showNotification(mob.type === 'dog' ? 'ឆ្កែក្លាយជារបស់អ្នក!' : 'ឆ្មាក្លាយជារបស់អ្នក!'); for (let i = 0; i < 6; i++) particleMgr.spawnHeart(mob.pos.x, mob.pos.y + mob.height, mob.pos.z); }
+        else { showNotification('វានៅតែខ្លាច... សាកម្ដងទៀត'); }
+        if (!isCreative()) player.inventory.consumeSelectedItem();
+        player.triggerSwing();
+        return true;
+    }
+    // Riding: right-click a saddled horse or elephant with an empty hand; Shift gets off
+    function tryMount(mob, slot) {
+        if (!mob.saddled || (slot && slot.count > 0 && slot.type === BLOCK.SADDLE) || player.riding) return false;
+        player.riding = mob;
+        mob.ridden = true;
+        player.pos.set(mob.pos.x, mob.pos.y, mob.pos.z);
+        showNotification('កំពុងជិះ៖ ចុច Shift ដើម្បីចុះ');
+        return true;
+    }
+    function updateRiding() {
+        const m = player.riding;
+        if (!m) return;
+        const k = player.lastKeys || {}, shift = k['ShiftLeft'] || k['ShiftRight'];
+        if (m.isDead || shift || player.dead || inEnd) { m.ridden = false; player.riding = null; return; }
+        m.pos.set(player.pos.x, player.pos.y, player.pos.z);
+        m.vel.set(0, 0, 0);
+        m.yaw = camera.rotation.y + Math.PI;
+        m.isMoving = Math.hypot(player.vel.x, player.vel.z) > 0.5;
+    }
+
+
+    // ==========================================
+    // PATALA (ឋានបាតាល): the naga underworld, reached through a naga gate (an obsidian frame lit with flint and steel).
+    // It lives far out in the world like the End: a red cave under a stone sky, lava lakes, hanging naga-gem lamps,
+    // ash sand, and at its heart the shrine where Reahu, the eclipse demon, waits. A naga gate by the arrival point leads home.
+    // ==========================================
+    const PATALA_X = -6000, PATALA_Z = 6000, PATALA_R = 110;
+    const PATALA_FLOOR = 8;
+    const PATALA_SPAWN = { x: PATALA_X + 0.5, y: PATALA_FLOOR + 2, z: PATALA_Z + 24.5 };
+    const patalaState = { defeated: false, bossUp: false };
+    function isPatalaRegion(wx, wz) { return Math.abs(wx - PATALA_X) < PATALA_R && Math.abs(wz - PATALA_Z) < PATALA_R; }
+    function patalaFloorAt(wx, wz) {
+        const n = simplex.noise2D(wx * 0.05, wz * 0.05) * 3 + simplex.noise2D(wx * 0.15 + 9, wz * 0.15) * 1.2;
+        return Math.max(3, Math.min(14, Math.round(PATALA_FLOOR + n)));
+    }
+    function generatePatalaChunk(chunk) {
+        const H = WORLD_HEIGHT;
+        for (let lx = 0; lx < CHUNK_SIZE_X; lx++) for (let lz = 0; lz < CHUNK_SIZE_Z; lz++) {
+            const wx = chunk.worldX + lx, wz = chunk.worldZ + lz;
+            const edge = Math.max(Math.abs(wx - PATALA_X), Math.abs(wz - PATALA_Z)) > PATALA_R - 4;
+            chunk.setBlock(lx, 0, lz, BLOCK.BEDROCK);
+            const ceil = H - 4 - Math.round(Math.abs(simplex.noise2D(wx * 0.11, wz * 0.11 + 40)) * 5);
+            if (edge) { for (let y = 1; y < H; y++) chunk.setBlock(lx, y, lz, BLOCK.PATALA_STONE); continue; }
+            const shrine = Math.hypot(wx - PATALA_X, wz - PATALA_Z) < 13;
+            const floor = shrine ? PATALA_FLOOR : patalaFloorAt(wx, wz);
+            const ash = simplex.noise2D(wx * 0.07 + 100, wz * 0.07) > 0.35;
+            for (let y = 1; y <= floor; y++) chunk.setBlock(lx, y, lz, y === floor && ash ? BLOCK.ASH_SAND : BLOCK.PATALA_STONE);
+            // lava lakes fill the low ground
+            if (!shrine) for (let y = floor + 1; y <= 6; y++) chunk.setBlock(lx, y, lz, BLOCK.LAVA);
+            for (let y = ceil; y < H; y++) chunk.setBlock(lx, y, lz, BLOCK.PATALA_STONE);
+            // stalactites, some tipped with glowing naga gems
+            const r = pseudoRandom(wx, wz, 811);
+            if (r < 0.06) {
+                const len = 2 + Math.floor(r * 60);
+                for (let k = 1; k <= len; k++) chunk.setBlock(lx, ceil - k, lz, k === len && r < 0.035 ? BLOCK.NAGA_GEM_LAMP : BLOCK.PATALA_STONE);
+            }
+            if (shrine) {                                              // Reahu's shrine: a laterite floor ringed with sandstone pillars
+                const d = Math.hypot(wx - PATALA_X, wz - PATALA_Z);
+                chunk.setBlock(lx, floor, lz, d < 4 ? BLOCK.GOLD_BLOCK : BLOCK.LATERITE);
+                if (Math.abs(d - 11) < 0.6 && (Math.round(Math.atan2(wz - PATALA_Z, wx - PATALA_X) * 4 / Math.PI) & 1) === 0) {
+                    for (let y = floor + 1; y < ceil; y++) chunk.setBlock(lx, y, lz, y === floor + 6 ? BLOCK.NAGA_GEM_LAMP : BLOCK.CARVED_SANDSTONE);
+                }
+            }
+        }
+        // The way home: a lit naga gate on a laterite platform by the arrival point
+        const gx = PATALA_X - 1, gz = PATALA_Z + 27, base = PATALA_FLOOR;
+        const put = (x, y, z, b) => { if (x >= chunk.worldX && x < chunk.worldX + CHUNK_SIZE_X && z >= chunk.worldZ && z < chunk.worldZ + CHUNK_SIZE_Z) chunk.setBlock(x - chunk.worldX, y, z - chunk.worldZ, b); };
+        for (let dx = -3; dx <= 4; dx++) for (let dz = -4; dz <= 3; dz++) {
+            put(gx + dx, base, gz + dz, BLOCK.LATERITE);
+            for (let y = base + 1; y <= base + 7; y++) put(gx + dx, y, gz + dz, BLOCK.AIR);
+        }
+        for (let i = -1; i <= 2; i++) { put(gx + i, base + 1, gz, BLOCK.OBSIDIAN); put(gx + i, base + 5, gz, BLOCK.OBSIDIAN); }
+        for (let j = 2; j <= 4; j++) { put(gx - 1, base + j, gz, BLOCK.OBSIDIAN); put(gx + 2, base + j, gz, BLOCK.OBSIDIAN); }
+        for (let i = 0; i <= 1; i++) for (let j = 2; j <= 4; j++) put(gx + i, base + j, gz, BLOCK.NAGA_GATE_X);
+    }
+    let inPatala = false;
+    // Through a naga gate: overworld -> Patala, or Patala -> back to the gate you came through
+    function travelThroughNagaGate() {
+        if (inEnd) return;
+        if (isPatalaRegion(player.pos.x, player.pos.z)) {
+            const back = player.gateReturn || { x: 0.5, y: null, z: 0.5 };
+            clearTransientEntities();
+            world.updateLoadedChunks(back.x, back.z, 2, scene);
+            if (back.y === null) player.respawnAtSurface();
+            else player.pos.set(back.x, back.y, back.z);
+            showNotification('អ្នកត្រឡប់មកពិភពលោកវិញ');
+        } else {
+            player.gateReturn = { x: player.pos.x + 1.5, y: player.pos.y + 0.2, z: player.pos.z + 1.5 };
+            // step out beside the gate, not into it
+            const gx = Math.floor(player.pos.x), gz = Math.floor(player.pos.z), gy = Math.floor(player.pos.y);
+            for (const [dx, dz] of [[0, 2], [0, -2], [2, 0], [-2, 0]]) {
+                if (!isSolid(world.getBlock(gx + dx, gy, gz + dz)) && !isSolid(world.getBlock(gx + dx, gy + 1, gz + dz)) && !isNagaGate(world.getBlock(gx + dx, gy, gz + dz))) {
+                    player.gateReturn = { x: gx + dx + 0.5, y: gy + 0.1, z: gz + dz + 0.5 }; break;
+                }
+            }
+            clearTransientEntities();
+            world.updateLoadedChunks(PATALA_SPAWN.x, PATALA_SPAWN.z, 2, scene);
+            player.pos.set(PATALA_SPAWN.x, PATALA_SPAWN.y, PATALA_SPAWN.z);
+            showToast({ icon: getToastIcon('info'), kind: 'night', key: 'patala', duration: 6000, title: 'ឋានបាតាល',
+                text: patalaState.defeated ? 'ឋានបាតាលស្ងប់ស្ងាត់ហើយ។' : 'រាហូរង់ចាំនៅទីសក្ការៈកណ្ដាល។', sub: 'ទ្វារនាគនៅក្បែរនេះនាំអ្នកទៅផ្ទះវិញ។' });
+        }
+        player.vel.set(0, 0, 0);
+        player.peakY = player.pos.y;
+        audio.playPortal();
+    }
+    // Patala's own monsters, and Reahu once the player comes near the shrine
+    let patalaSpawnTimer = 0;
+    function updatePatala(dt) {
+        inPatala = isPatalaRegion(player.pos.x, player.pos.z);
+        if (!inPatala || multiplayer.role === 'client') return;
+        patalaSpawnTimer -= dt;
+        if (patalaSpawnTimer <= 0) {
+            patalaSpawnTimer = 4;
+            if (mobMgr.mobs.filter(m => m.isHostile).length < 6) {
+                const a = Math.random() * Math.PI * 2, d = 14 + Math.random() * 14;
+                const sx = Math.floor(player.pos.x + Math.cos(a) * d), sz = Math.floor(player.pos.z + Math.sin(a) * d);
+                if (world.getChunkAtWorld(sx, sz)) {
+                    for (let y = 14; y > 6; y--) {
+                        const b = world.getBlock(sx, y, sz);
+                        if ((b === BLOCK.PATALA_STONE || b === BLOCK.ASH_SAND) && world.getBlock(sx, y + 1, sz) === BLOCK.AIR && world.getBlock(sx, y + 2, sz) === BLOCK.AIR) {
+                            const r = Math.random();
+                            mobMgr.mobs.push(r < 0.4 ? new ShadowMob(sx + 0.5, y + 1, sz + 0.5, scene) : r < 0.7 ? new CobraMob(sx + 0.5, y + 1, sz + 0.5, scene) : new ApMob(sx + 0.5, y + 1, sz + 0.5, scene));
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        const nearShrine = Math.hypot(player.pos.x - PATALA_X, player.pos.z - PATALA_Z) < 30;
+        if (nearShrine && !patalaState.defeated && !mobMgr.mobs.some(m => m.type === 'reahu' && !m.isDead)) {
+            mobMgr.mobs.push(new ReahuMob(PATALA_X + 0.5, PATALA_FLOOR + 4, PATALA_Z + 0.5, scene));
+            showToast({ icon: getToastIcon('danger'), kind: 'warn', key: 'reahu', duration: 5000, title: 'រាហូបានភ្ញាក់!', text: 'បិសាចស៊ីព្រះចន្ទ ការពារខ្លួន!' });
+        }
+        updateBossBar();
+    }
+    // Reahu: a giant crowned head with two hands and no body, holding the moon. It floats around the shrine,
+    // throws dark orbs, and slams down when you come close. 300 health.
+    class ReahuMob extends ZombieMob {
+        constructor(x, y, z, scene) {
+            super(x, y, z, scene);
+            this.type = 'reahu';
+            this.width = 2.2; this.height = 3.2; this.health = 300; this.maxHealth = 300; this.speed = 1.6; this.attackDamage = 7;
+            this.noGravity = true; this.burnsInDaylight = false; this.isBoss = true; this.loot = null;
+            this.orbCd = 2; this.t = 0;
+        }
+        buildModel() {
+            const SKIN = [46, 42, 100];
+            const skin = MobSkins.mat('kh_reahu_skin', 8, 8, MobSkins.mottle(SKIN, 601, 14));
+            const face = MobSkins.mat('new_reahu_face', 8, 8, MobSkins.mottle(SKIN, 603, 8));
+            const gold = new THREE.MeshLambertMaterial({ color: 0xf2c64a, emissive: 0x2a1a00 });
+            const head = skinnedBox(2.0, 2.0, 1.8, face, skin); head.position.set(0, 1.8, 0);
+            const crown1 = khBox(1.6, 0.3, 1.4, gold); crown1.position.set(0, 2.95, 0);
+            const crown2 = khBox(1.0, 0.4, 0.9, gold); crown2.position.set(0, 3.3, 0);
+            const crown3 = khBox(0.4, 0.5, 0.4, gold); crown3.position.set(0, 3.7, 0);
+            this.group.add(head, crown1, crown2, crown3);
+            this.hands = [-1, 1].map(sx => { const h = khBox(0.7, 0.5, 0.8, skin); h.position.set(sx * 1.6, 0.9, 0.6); this.group.add(h); return h; });
+            const moon = khBox(0.8, 0.8, 0.8, new THREE.MeshLambertMaterial({ color: 0xe8ecf8, emissive: 0x606878 })); moon.position.set(0, 0.5, 1.0);
+            this.group.add(moon);
+            this.legs = []; this.arms = [];
+        }
+        updateAI(dt, player, timeEngine, pm, world) {
+            this.t += dt;
+            const home = new THREE.Vector3(PATALA_X + 0.5, PATALA_FLOOR + 3.5, PATALA_Z + 0.5);
+            const d = this.pos.distanceTo(player.pos);
+            // circle the shrine, drifting toward the player
+            const ang = this.t * 0.35;
+            const want = home.clone().add(new THREE.Vector3(Math.cos(ang) * 6, Math.sin(this.t * 0.8) * 1.2, Math.sin(ang) * 6));
+            if (d < 18) want.lerp(player.pos.clone().add(new THREE.Vector3(0, 2.5, 0)), 0.35);
+            const dir = want.sub(this.pos);
+            this.vel.set(dir.x * 0.9, dir.y * 0.9, dir.z * 0.9);
+            this.yaw = Math.atan2(player.pos.x - this.pos.x, player.pos.z - this.pos.z);
+            this.hands.forEach((h, i) => { h.position.y = 0.9 + Math.sin(this.t * 3 + i * 2) * 0.25; });
+            this.orbCd -= dt;
+            if (this.orbCd <= 0 && d < 28 && !player.dead) {
+                this.orbCd = this.health < 150 ? 1.2 : 2.0;                  // angrier when hurt
+                const from = this.pos.clone().add(new THREE.Vector3(0, 1.8, 0));
+                mobMgr.spawnArrow(from, player.pos.clone().add(new THREE.Vector3(0, 1, 0)), { speed: 14, spread: 0.08 });
+                const orb = mobMgr.arrows[mobMgr.arrows.length - 1];
+                if (orb) { orb.mesh.material = new THREE.MeshBasicMaterial({ color: 0x3a1a6a }); orb.mesh.scale.set(5, 5, 0.8); }
+            }
+            this.attackCd = Math.max(0, (this.attackCd || 0) - dt);
+            if (d < 3 && this.attackCd <= 0 && !player.dead) { this.attackCd = 1.5; player.takeDamage(this.attackDamage, 'zombie'); }
+            this.isMoving = true;
+        }
+        die(killed = false) {
+            const was = this.isDead;
+            super.die(killed);
+            if (was || !killed) return;
+            patalaState.defeated = true;
+            [[BLOCK.NAGA_PEARL, 3], [BLOCK.GOLDEN_MANGO, 2], [BLOCK.SAPPHIRE_BLOCK, 1], [BLOCK.PALM_LEAF_BOOK, 2]].forEach(([type, count]) =>
+                pendingMobLoot.push({ type, count, x: this.pos.x, y: this.pos.y, z: this.pos.z, xp: 0 }));
+            player.addXP(60);
+            showToast({ icon: getToastIcon('info'), kind: 'unlock', key: 'reahu-down', duration: 7000, title: 'ជ័យជម្នះ!', text: 'អ្នកបានឈ្នះរាហូ។ ព្រះចន្ទត្រូវបានរំដោះ!' });
+        }
+    }
+    let bossBarEl = null;
+    function updateBossBar() {
+        const boss = mobMgr.mobs.find(m => m.isBoss && !m.isDead && m.pos.distanceTo(player.pos) < 60);
+        if (!bossBarEl) {
+            bossBarEl = document.createElement('div');
+            bossBarEl.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);width:min(420px,70vw);z-index:30;display:none;text-align:center;' +
+                'font:15px "Kantumruy Pro",sans-serif;color:#f4ead2;text-shadow:0 1px 2px #000;pointer-events:none';
+            bossBarEl.innerHTML = '<div>រាហូ · បិសាចស៊ីព្រះចន្ទ</div><div style="height:10px;border:2px solid #1a120e;background:#3a0a1a;margin-top:4px"><div style="height:100%;background:linear-gradient(#b040e0,#6a20a0);width:100%"></div></div>';
+            document.body.appendChild(bossBarEl);
+        }
+        bossBarEl.style.display = boss ? 'block' : 'none';
+        if (boss) bossBarEl.lastChild.firstChild.style.width = Math.max(0, boss.health / boss.maxHealth * 100) + '%';
     }
 
     class MobManager {
@@ -8877,7 +9436,9 @@ const BLOCK = {
                 }
 
                 // AI updates
-                if (mob.updateAI) {
+                if (mob.ridden) {
+                    // carried along by the player in updateRiding
+                } else if (mob.updateAI) {
                     if (!mob.isHostile) mob.updateAI(dt, player, timeEngine, particleMgr, world);
                 } else if (mob.breedFood && this.animalAI(mob, dt, player, particleMgr)) {
                     // following food, looking for a partner, or growing up: handled in animalAI
@@ -8903,7 +9464,7 @@ const BLOCK = {
                 mob.tickIdle(dt);
 
                 // Despawn very distant mobs
-                if (mob.pos.distanceTo(player.pos) > 65.0) {
+                if (mob.pos.distanceTo(player.pos) > 65.0 && !mob.tamed && !mob.saddled && !mob.leashed && !mob.isBoss) {
                     mob.die();
                     this.mobs.splice(i, 1);
                 }
@@ -9038,8 +9599,9 @@ const BLOCK = {
                 if (!canMonsterSpawnOn(surface)) return;                         // lower slabs and anything but open grass
                 if (blockLightAt(sx, sy + 1, sz) > 0) return;                    // Khmer edition: monsters only spawn where block light is 0
                 const r = Math.random();
-                let monster;
-                if (r < 0.23) monster = new CreeperMob(sx + 0.5, sy + 1, sz + 0.5, this.scene);      // only lightning charges a creeper
+                let monster = khNightMonster(world, sx, sy, sz, this.scene);
+                if (monster) { /* a Khmer content v2 monster */ }
+                else if (r < 0.23) monster = new CreeperMob(sx + 0.5, sy + 1, sz + 0.5, this.scene);      // only lightning charges a creeper
                 else if (r < 0.44) monster = new SkeletonMob(sx + 0.5, sy + 1, sz + 0.5, this.scene);
                 else if (r < 0.70) monster = new ZombieMob(sx + 0.5, sy + 1, sz + 0.5, this.scene);
                 else if (r < 0.82) monster = new SpiderMob(sx + 0.5, sy + 1, sz + 0.5, this.scene);
@@ -9050,8 +9612,9 @@ const BLOCK = {
                 this.mobs.push(monster);
             } else if (!isNight && activePassives < 12 && surface === BLOCK.GRASS) {
                 const r = Math.random();
-                let animal;
-                if (r < 0.24) animal = new ChickenMob(sx + 0.5, sy + 1, sz + 0.5, this.scene);
+                let animal = khDayAnimal(world, sx, sy, sz, this.scene);
+                if (animal) { /* a Khmer content v2 animal */ }
+                else if (r < 0.24) animal = new ChickenMob(sx + 0.5, sy + 1, sz + 0.5, this.scene);
                 else if (r < 0.44) animal = new PigMob(sx + 0.5, sy + 1, sz + 0.5, this.scene);
                 else if (r < 0.64) animal = new CowMob(sx + 0.5, sy + 1, sz + 0.5, this.scene);
                 else if (r < 0.86) animal = new SheepMob(sx + 0.5, sy + 1, sz + 0.5, this.scene);
@@ -9061,6 +9624,30 @@ const BLOCK = {
         }
     }
 
+    // Khmer content v2 spawns: crocodiles by the water, the Ap and the shadow ghost anywhere at night, cobras in the forest;
+    // by day buffalo by the water, elephants and monkeys in the forest, dogs and cats around villages, bats at dusk
+    function khNearWater(world, x, y, z) {
+        for (const [dx, dz] of [[2, 0], [-2, 0], [0, 2], [0, -2], [1, 1], [-1, -1]]) for (const dy of [0, -1]) if (world.getBlock(x + dx, y + dy, z + dz) === BLOCK.WATER) return true;
+        return false;
+    }
+    function khNightMonster(world, x, y, z, scene) {
+        const r = Math.random(), X = x + 0.5, Y = y + 1, Z = z + 0.5;
+        if (khNearWater(world, x, y, z) && r < 0.5) return new CrocodileMob(X, Y, Z, scene);
+        if (r < 0.07) return new ApMob(X, Y, Z, scene);
+        if (r < 0.12) return new ShadowMob(X, Y, Z, scene);
+        if (r < 0.2 && getBiome(x, z) === 'Forest') return new CobraMob(X, Y, Z, scene);
+        if (r < 0.24 && mobMgr.mobs.filter(m => m.type === 'bat').length < 3) return new BatMob(X, Y, Z, scene);
+        return null;
+    }
+    function khDayAnimal(world, x, y, z, scene) {
+        const r = Math.random(), X = x + 0.5, Y = y + 1, Z = z + 0.5, forest = getBiome(x, z) === 'Forest';
+        if (khNearWater(world, x, y, z) && r < 0.45) return new BuffaloMob(X, Y, Z, scene);
+        if (villagesNear(x, z, 40).length && r < 0.3) return r < 0.18 ? new DogMob(X, Y, Z, scene) : new CatMob(X, Y, Z, scene);
+        if (forest && r < 0.12) return new ElephantMob(X, Y, Z, scene);
+        if (forest && r < 0.3) return new MonkeyMob(X, Y, Z, scene);
+        if (r < 0.06) return new BuffaloMob(X, Y, Z, scene);
+        return null;
+    }
     // ---------- Spawn rules ----------
     // The y of the first real block straight down from the sky at (x, z): air, flowers, tall grass and torches are skipped,
     // anything else (a roof, a slab, leaves, water) is the surface. Returns null when there is no room for a mob on it
@@ -10099,6 +10686,7 @@ const BLOCK = {
         }
 
         updatePhysics(dt, inputKeys) {
+            this.lastKeys = inputKeys;
             if (this.boat) { this.updateBoatRide(dt, inputKeys); return; }
             const feetBlock = this.world.getBlock(Math.floor(this.pos.x), Math.floor(this.pos.y + 0.1), Math.floor(this.pos.z));
             const headBlock = this.world.getBlock(Math.floor(this.pos.x), Math.floor(this.pos.y + this.eyeHeight), Math.floor(this.pos.z));
@@ -10137,6 +10725,7 @@ const BLOCK = {
             if (this.speedBoost > 0) { this.speedBoost = Math.max(0, this.speedBoost - dt); if (!flying) targetSpeed *= 1.3; }
             if (this.inWater && !flying) targetSpeed *= 0.55;
             if (eatState.active) targetSpeed *= 0.35;               // you walk slowly while eating
+            if (this.riding) targetSpeed *= this.riding.rideSpeed || 1.6;     // riding a horse or an elephant
             if (!flying && this.world.getBlock(Math.floor(this.pos.x), Math.floor(this.pos.y - 0.1), Math.floor(this.pos.z)) === BLOCK.ASH_SAND) targetSpeed *= 0.5;
 
             const baseFov = GameOptions.fov;
@@ -10300,7 +10889,7 @@ const BLOCK = {
                 }
             }
 
-            this.camera.position.set(this.pos.x, this.pos.y + this.eyeHeight - (this.stepOffset || 0), this.pos.z);
+            this.camera.position.set(this.pos.x, this.pos.y + this.eyeHeight - (this.stepOffset || 0) + (this.riding ? (this.riding.rideEye || 1.0) : 0), this.pos.z);
             this.updateHand(dt);
 
             if (this.pos.y < -4.0) {
@@ -11929,6 +12518,7 @@ const BLOCK = {
             guests: multiplayer.guestData,
             edits,
             chests: [...chests].filter(([, c]) => c.some(sl => sl.count > 0)).map(([k, c]) => [k, c.map(sl => sl.count > 0 ? [sl.type, sl.count, sl.dmg || 0] : 0)]),
+            patala: { defeated: patalaState.defeated },
             boats: boats.map(b => [+b.pos.x.toFixed(2), +b.pos.y.toFixed(2), +b.pos.z.toFixed(2), +b.yaw.toFixed(2)]),
             furnaces: [...furnaces].map(([k, f]) => [k, [f.in.type, f.in.count], [f.fuel.type, f.fuel.count], [f.out.type, f.out.count], f.burn, f.burnMax, f.prog]),
             end: endMgr ? {
@@ -11992,6 +12582,7 @@ const BLOCK = {
         applyPlayerState(data);
         multiplayer.guestData = data.guests && typeof data.guests === 'object' ? data.guests : {};
         if (data.end) Object.assign(endProgress, data.end);
+        patalaState.defeated = !!(data.patala && data.patala.defeated);
         clearBoats();
         for (const row of (Array.isArray(data.boats) ? data.boats : [])) {
             if (!Array.isArray(row) || !row.slice(0, 4).every(Number.isFinite)) continue;
@@ -14279,7 +14870,8 @@ const BLOCK = {
     }
 
     const MONSTER_NAMES = { creeper: 'ខ្មោចផ្ទុះ', skeleton: 'គ្រោងឆ្អឹង', zombie: 'ខ្មោចឆៅ', spider: 'ពីងពាង',
-        yeak: 'យក្សព្រៃភ្នំ', preay: 'ខ្មោចព្រាយ', tiger: 'ខ្លាធំ' };
+        yeak: 'យក្សព្រៃភ្នំ', preay: 'ខ្មោចព្រាយ', tiger: 'ខ្លាធំ', crocodile: 'ក្រពើ', cobra: 'ពស់វែក', ap: 'អាប', shadow: 'ខ្មោចស្រមោល', reahu: 'រាហូ',
+        buffalo: 'ក្របី', elephant: 'ដំរី', dog: 'ឆ្កែ', cat: 'ឆ្មា', monkey: 'ស្វា', bat: 'ប្រចៀវ', horse: 'សេះ', cow: 'គោ', pig: 'ជ្រូក', sheep: 'ចៀម', chicken: 'មាន់' };
     let threatTimer = 0, threatCooldown = 0;
     function updateThreatWarnings(dt) {
         threatCooldown = Math.max(0, threatCooldown - dt);
@@ -14469,7 +15061,7 @@ const BLOCK = {
         }
         // Daylight: 1 with the sun well up, 0 once it is below the horizon; rock overhead cancels it out
         const sunUp = Math.max(0, Math.min(1, (timeEngine.sunDir.y + 0.05) / 0.3));
-        const target = inEnd ? 1 : 1 - sunUp * (1 - caveDarkness);
+        const target = (inEnd || inPatala) ? 1 : 1 - sunUp * (1 - caveDarkness);
         torchDarkness += (target - torchDarkness) * Math.min(1, dt * 2);
         const k = torchDarkness;
         BLOCK_LIGHT_UNIFORM.value = 0.15 + 1.75 * k;           // faint by day, strong at night and underground
@@ -14519,7 +15111,7 @@ const BLOCK = {
         return false;
     }
     function applyCaveDarkness(dt) {
-        if (inEnd) { caveDarkness = 0; return; }
+        if (inEnd || inPatala) { caveDarkness = 0; return; }
         caveScanTimer -= dt;
         if (caveScanTimer <= 0) {
             caveScanTimer = 0.25;
@@ -14888,24 +15480,34 @@ const BLOCK = {
 
         buildModel() {
             this.mats = {
-                body: new THREE.MeshLambertMaterial({ color: 0x2c2838, emissive: 0x120d1c }),
-                accent: new THREE.MeshLambertMaterial({ color: 0x6a4a90, emissive: 0x2a1a40 }),
-                wing: new THREE.MeshLambertMaterial({ color: 0x4a3470, emissive: 0x1e1236, side: THREE.DoubleSide }),
-                eye: new THREE.MeshBasicMaterial({ color: 0xe45cff })
+                // Khmer edition: the Naga king, green scales and a golden belly and crest
+                body: new THREE.MeshLambertMaterial({ color: 0x2f7a4c, emissive: 0x0a2414 }),
+                accent: new THREE.MeshLambertMaterial({ color: 0xd8b04a, emissive: 0x3a2a08 }),
+                wing: new THREE.MeshLambertMaterial({ color: 0x43985e, emissive: 0x12301c, side: THREE.DoubleSide }),
+                eye: new THREE.MeshBasicMaterial({ color: 0xff3a2a })
             };
             const m = this.mats;
             const box = (w, h, d, mat) => new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
             this.group = new THREE.Group();
             this.scene.add(this.group);
 
+            // Seven hooded heads fanned out like the naga balustrades of Angkor Wat, a golden flame crest above the middle one
             this.head = new THREE.Group();
             this.head.add(box(1.7, 1.2, 2.0, m.body));
-            const snout = box(1.1, 0.7, 1.3, m.body); snout.position.set(0, -0.15, 1.5); this.head.add(snout);
-            const jaw = box(0.95, 0.3, 1.5, m.accent); jaw.position.set(0, -0.62, 1.1); this.head.add(jaw);
-            [-1, 1].forEach(side => {
-                const horn = box(0.25, 0.8, 0.25, m.accent); horn.position.set(side * 0.6, 0.95, -0.3); horn.rotation.x = -0.4; this.head.add(horn);
-                const eye = box(0.12, 0.25, 0.45, m.eye); eye.position.set(side * 0.87, 0.2, 0.55); this.head.add(eye);
-            });
+            const belly = box(1.2, 0.3, 1.6, m.accent); belly.position.set(0, -0.62, 0.2); this.head.add(belly);
+            for (let k = -3; k <= 3; k++) {
+                const h = new THREE.Group();
+                const a = k * 0.42;
+                h.position.set(Math.sin(a) * 1.5, 0.6 + Math.cos(a) * 1.3 - 0.8, 0.9 - Math.abs(k) * 0.12);
+                h.rotation.z = -a * 0.6;
+                const hood = box(0.8, 0.9, 0.35, m.body); h.add(hood);
+                const under = box(0.5, 0.6, 0.1, m.accent); under.position.z = 0.2; h.add(under);
+                const snout = box(0.4, 0.3, 0.6, m.body); snout.position.set(0, 0.25, 0.45); h.add(snout);
+                [-1, 1].forEach(side => { const eye = box(0.1, 0.1, 0.12, m.eye); eye.position.set(side * 0.15, 0.36, 0.72); h.add(eye); });
+                const crest = box(0.16, 0.35, 0.16, m.accent); crest.position.set(0, 0.6, 0); h.add(crest);
+                this.head.add(h);
+            }
+            const flame = box(0.5, 0.9, 0.2, m.accent); flame.position.set(0, 2.6, 0.8); this.head.add(flame);
             this.group.add(this.head);
 
             this.segments = [];
@@ -15245,13 +15847,17 @@ const BLOCK = {
                 } else if (parts.length >= 3 && parts.every(v => !isNaN(parseFloat(v)))) {
                     teleport(parseFloat(parts[0]), parseFloat(parts[1]), parseFloat(parts[2]));
                     say('បានផ្លាស់ទី');
-                } else say('របៀបប្រើ៖ /tp end | stronghold | village | temple | home | <x> <y> <z>');
+                } else if ((parts[0] || '').toLowerCase() === 'patala') {
+                    if (!isPatalaRegion(player.pos.x, player.pos.z)) travelThroughNagaGate();
+                } else say('របៀបប្រើ៖ /tp end | patala | stronghold | village | temple | home | <x> <y> <z>');
                 break;
             }
             case 'summon': {                               // Khmer edition: /summon yeak|preay|tiger
-                const kinds = { yeak: YeakMob, preay: PreayMob, tiger: TigerMob, zombie: ZombieMob, skeleton: SkeletonMob, spider: SpiderMob, creeper: CreeperMob };
+                const kinds = { yeak: YeakMob, preay: PreayMob, tiger: TigerMob, zombie: ZombieMob, skeleton: SkeletonMob, spider: SpiderMob, creeper: CreeperMob,
+                    buffalo: BuffaloMob, elephant: ElephantMob, dog: DogMob, cat: CatMob, monkey: MonkeyMob, bat: BatMob, crocodile: CrocodileMob, cobra: CobraMob, ap: ApMob, shadow: ShadowMob,
+                    horse: HorseMob, cow: CowMob, pig: PigMob, sheep: SheepMob, chicken: ChickenMob, reahu: typeof ReahuMob === 'function' ? ReahuMob : YeakMob };
                 const Cls = kinds[(parts[0] || '').toLowerCase()];
-                if (!Cls) { say('របៀបប្រើ៖ /summon yeak | preay | tiger | zombie | skeleton | spider | creeper'); break; }
+                if (!Cls) { say('របៀបប្រើ៖ /summon ' + Object.keys(kinds).join(' | ')); break; }
                 const fx = -Math.sin(camera.rotation.y), fz = -Math.cos(camera.rotation.y);
                 const mx = player.pos.x + fx * 5, mz = player.pos.z + fz * 5;
                 const my = findSpawnSurface(world, Math.floor(mx), Math.floor(mz));
@@ -15480,6 +16086,8 @@ const BLOCK = {
             const mob = mobUnderCrosshair();
             if (mob && (mob.type === 'villager' || mob.type === 'trader')) openTrade(mob);      // right-click a villager or trader to trade
             else if (mob && khUseOnMob(mob, player.inventory.getSelectedSlot())) { /* sheared, milked, leashed or saddled */ }
+            else if (mob && tryTamePet(mob, player.inventory.getSelectedSlot())) { /* fed a dog or cat */ }
+            else if (mob && tryMount(mob, player.inventory.getSelectedSlot())) { /* riding */ }
             else if (mob && tryFeedAnimal(mob)) { /* fed an animal */ }
             else if (!aimedBlockIsInteractive() && khUseItem(player.inventory.getSelectedSlot())) { /* pearl, firework, crossbow, rod */ }
             else if (!tryWearHeldItem() && !tryBeginItemUse()) handleBlockPlacement();
@@ -16334,7 +16942,7 @@ const BLOCK = {
                 player.yantraTimer = 300;
                 for (let i = 0; i < 12; i++) particleMgr.spawnHeart(x + Math.random(), y + 1.2 + Math.random() * 0.6, z + Math.random());
                 audio.playLevelUp();
-                showToast({ icon: getToastIcon('info'), kind: 'info', key: 'yantra', duration: 4500, title: 'យ័ន្តការពារ', text: 'ការពារ +៣០% និងវាយ +២ រយៈពេល ៥ នាទី' });
+                showToast({ icon: getToastIcon('info'), kind: 'unlock', key: 'yantra', duration: 4500, title: 'យ័ន្តការពារ', text: 'ការពារ +៣០% និងវាយ +២ រយៈពេល ៥ នាទី' });
                 return true;
             }
             case BLOCK.FIRECRACKER_KEG:
@@ -16675,6 +17283,8 @@ const BLOCK = {
     // ---------- every frame ----------
     function updateKhContent(dt) {
         crossbowCooldown = Math.max(0, crossbowCooldown - dt);
+        updateRiding();
+        updatePatala(dt);
         if (player.yantraTimer > 0) {
             player.yantraTimer -= dt;
             if (player.yantraTimer <= 0) showNotification('យ័ន្តការពារបានអស់ហើយ');
@@ -16913,11 +17523,14 @@ const BLOCK = {
         else weather.rainLines.visible = false;
 
         // The End has no sun, moon or clouds, just a dim violet void
-        timeEngine.celestialGroup.visible = !inEnd && weather.level < 0.9;
-        cloudGroup.visible = !inEnd;
+        timeEngine.celestialGroup.visible = !inEnd && !inPatala && weather.level < 0.9;
+        cloudGroup.visible = !inEnd && !inPatala;
         if (inEnd) {
             ambientLight.intensity = 0.62;
             sunLight.intensity = 0.3;
+        } else if (inPatala) {
+            ambientLight.intensity = 0.55;
+            sunLight.intensity = 0.15;
         }
 
         // Underwater Atmosphere vs Daylight
@@ -16933,6 +17546,12 @@ const BLOCK = {
                 camera.getWorldDirection(fwd);
                 particleMgr.spawnUnderwaterBubble(camera.position, fwd);
             }
+        } else if (inPatala) {
+            if (underwaterOverlay) underwaterOverlay.style.display = 'none';
+            scene.background.setHex(0x2a0806);
+            scene.fog.color.setHex(0x2a0806);
+            scene.fog.near = 10;
+            scene.fog.far = 56;
         } else if (inEnd) {
             if (underwaterOverlay) underwaterOverlay.style.display = 'none';
             scene.background.setHex(0x0b0714);
@@ -16946,7 +17565,7 @@ const BLOCK = {
             scene.fog.near = 28;
             scene.fog.far = GameOptions.renderDistance * 16 + 8;
         }
-        if (isGameRunning && !inEnd) weather.applyAtmosphere(ambientLight, sunLight);
+        if (isGameRunning && !inEnd && !inPatala) weather.applyAtmosphere(ambientLight, sunLight);
         if (isGameRunning) applyCaveDarkness(dt);
 
         if (!isGameRunning) {
