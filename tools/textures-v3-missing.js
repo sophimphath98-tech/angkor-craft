@@ -511,6 +511,58 @@ BLOCKS.NAGA_GATE = tile((x, y) => {          // portal surface: swirling green-v
   return ramp(PG, s * 0.75 + (d < 2 ? 0.25 : 0));
 });
 
+/* ---------- textures for the 3D shapes of the new furniture blocks (no outline) ---------- */
+BLOCKS.JAR_SIDE = tile((x, y) => {          // glazed brown jar: dark glaze, a pale band, light from the left
+  const J = pal('2a1408', '4a2810', '6a3c1c', '8a5428', 'a8703a');
+  if (y === 4 || y === 5) return y === 4 ? hex('c8a060') : hex('8a6430');
+  return ramp(J, 0.25 + (x < 5 ? 0.45 : x > 12 ? -0.2 : 0.15) + (hash(x >> 2, y >> 2, 401) - 0.5) * 0.2);
+}, false);
+BLOCKS.JAR_TOP = tile((x, y) => {
+  const d = Math.hypot(x - 7.5, y - 7.5);
+  if (d < 4.5) return ramp(P.water, 0.4 + (x + y < 13 ? 0.3 : 0));
+  if (d < 6) return hex('3a2010');
+  return ramp(pal('4a2810', '6a3c1c', '8a5428'), 0.5);
+}, false);
+BLOCKS.ANVIL_SIDE = tile((x, y) => {
+  const A = pal('1e2026', '2e3238', '42464e', '5a606a', '767e8a');
+  if (y === 0) return A[4];
+  return ramp(A, 0.3 + (y < 3 ? 0.3 : 0) + (x < 2 ? 0.2 : 0) + (hash(x >> 1, y >> 1, 411) - 0.5) * 0.25);
+}, false);
+BLOCKS.POT_SIDE = tile((x, y) => ramp(pal('6a3010', '9a4a1c', 'c06a30', 'd88a48'), 0.35 + (x < 5 ? 0.35 : 0) - (y > 12 ? 0.2 : 0) + ((y === 3) ? 0.3 : 0)), false);
+BLOCKS.CART_SIDE = tile((x, y) => {
+  const W = pal('3a1c0c', '5a3018', '7d4127', '9a5532', 'b56c40');
+  if (y === 0 || y === 15) return W[0];
+  if (y === 7 || y === 8) return y === 7 ? hex('c02828') : hex('8a1a1a');      // red painted stripe
+  const k = x % 8;
+  return k === 0 ? W[1] : ramp(W, 0.45 + (k === 1 ? 0.3 : 0) + (y < 7 ? 0.1 : -0.1));
+}, false);
+BLOCKS.SIGN_FACE = tile((x, y) => {
+  const W = pal('5a2c18', '7d4127', '9a5532', 'b56c40', 'c88454');
+  if ((y === 4 || y === 8 || y === 12) && x > 2 && x < 13 - (y === 12 ? 4 : 0)) return hex('4a2414');   // carved lines of text
+  return ramp(W, 0.5 + ((y >> 2) % 2 ? 0.15 : 0) + (x < 2 ? 0.2 : x > 13 ? -0.2 : 0));
+}, false);
+BLOCKS.BAMBOO_PLANT = paint(16, 16, (g) => {    // growing bamboo: two stalks with nodes and a few leaves
+  g.rect(4, 0, 6, 15, 'bamboo'); g.rect(10, 0, 12, 15, 'bamboo');
+  [3, 9, 14].forEach(y => g.rect(4, y, 6, y, 'node')); [1, 7, 12].forEach(y => g.rect(10, y, 12, y, 'node'));
+  g.map(7, 2, ['ll.', '.ll'], { l: 'leaf' }); g.map(0, 8, ['.ll', 'll.'], { l: 'leaf' }); g.map(13, 5, ['ll', '.l'], { l: 'leaf' });
+}, P, { outline: false });
+BLOCKS.FLAME = paint(16, 16, (g) => {             // campfire flame, drawn as glowing crossed quads
+  g.map(2, 2, ['....f.......', '...ff...f...', '...fff.ff...', '..ffffffff..', '..ffyyyfff..', '.ffyyyyyfff.', '.ffyyyyyyff.', 'fffyyyyyyfff', 'ffffyyyyffff', '.ffffffffff.'], { f: 'flame', y: 'spark' });
+}, P, { outline: false });
+BLOCKS.CAMPFIRE_LOG = tile((x, y) => {
+  if (y < 2 || y > 13) return ramp(pal('35261f', '4a3527'), 0.5);
+  return ramp(pal('231a1c', '35261f', '4a3527', '614631'), 0.3 + ((x + (y >> 2)) % 4 === 0 ? -0.3 : 0.3));
+}, false);
+
+ITEMS.WATERMELON_SLICE = icon((g) => {            // a wedge of watermelon: green rind, red flesh, black seeds
+  for (let y = 3; y <= 13; y++) { const w = Math.round((y - 3) * 0.6); g.rect(8 - w, y, 7 + w, y, y >= 12 ? 'rind' : 'flesh'); }
+  g.rect(2, 13, 13, 13, 'rind2'); [[7, 6], [6, 9], [9, 9], [8, 11], [4, 11], [11, 11]].forEach(([x, y]) => g.dot(x, y, 'seed'));
+}, { ...P, flesh: pal('a01c1c', 'd83030', 'f05a4a'), rind: pal('2e7a28', '4a9a3a', '8ac868'), rind2: [hex('1e5a1c')], seed: [hex('1a1010')] });
+ITEMS.SANKHYA_LAPOV = icon((g) => {               // num sankhya lapov: pumpkin filled with coconut custard, cut open
+  g.ellipse(8, 9, 6.4, 5.6, 'pumpkin'); g.ellipse(8, 8.4, 4, 3.4, 'custard'); g.rect(7, 2, 8, 3, 'stem');
+  [4, 12].forEach(x => g.rect(x, 6, x, 13, 'rib'));
+}, { ...P, pumpkin: pal('9a5008', 'c86c10', 'e88a20', 'f8a83c'), custard: pal('d8b860', 'f0d888', 'fff0b8'), stem: [hex('4a3018')], rib: [hex('9a5008')] });
+
 /* ============================ FACES (8x8) ============================ */
 const FACE_ART = {
   buffalo: ['HhHHHHhH', 'HHGGGGHH', 'GWEGGEWG', 'GGGGGGGG', 'GGGGGGGG', 'GMMMMMMG', 'GMmMMmMG', 'gGMMMMGg'],   // krabei: grey, swept horns
