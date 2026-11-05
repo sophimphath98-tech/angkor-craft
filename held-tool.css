@@ -1,0 +1,258 @@
+/* ==========================================================================
+   HELD TOOL SYSTEM: the first-person right hand (tools, weapons, bow)
+   Pairs with held-tool.js. Markup lives in index.html (#player-hand-layer).
+
+   HOW THE POSE MATH WORKS
+   Every pose angle in this file is the ELEVATION of the tool head above the
+   horizontal line pointing at the crosshair (toward screen-left, because the
+   hand is on the right):
+        0deg  = flat, pointing at the crosshair    (bow)
+       45deg  = raised and pointing forward        (resting tool / sword)
+       70deg  = raised high                        (swing wind-up)
+      -20deg  = dipped below the horizon           (swing strike)
+   The raw item sprites are authored with the handle bottom-left and the head
+   top-right, so .held-frame mirrors them (head now leans toward the crosshair)
+   and --art-elev (45deg) removes the angle the art already has. Net result:
+   a resting tool is a pure, pixel-exact mirror of its sprite with no resampling.
+
+   PIVOT
+   .held-frame shifts the sprite so the handle's last pixel sits exactly on the
+   bottom-right corner of the .held-tool box, so `transform-origin: bottom right`
+   IS the hand pixel and the tool rotates around where it is gripped.
+   ========================================================================== */
+
+#player-hand-layer {
+    --u: clamp(8px, 1.9vmin, 19px);                /* one sprite pixel on screen: the tool is about a fifth of the screen */
+    --draw-dist: max(8px, calc(var(--u) * 1.1));  /* how far the arrow and string pull back at full draw */
+    position: fixed;
+    inset: 0;
+    z-index: 8;                                    /* above the 3D canvas, below the crosshair, hotbar and menus */
+    overflow: hidden;
+    pointer-events: none;
+    display: none;
+}
+#player-hand-layer.is-visible { display: block; }
+
+/* ---- Right-hand anchor ---------------------------------------------------- */
+#player-right-hand {
+    --pose: 45deg;            /* elevation of the tool head (see the top of the file) */
+    --art-elev: 45deg;        /* elevation already baked into the raw sprite */
+    --scale: 1;
+    --draw: 0;                /* 0..1 bow draw, written by held-tool.js */
+    --bob-x: 0px;             /* walking bob, written by held-tool.js */
+    --bob-y: 0px;
+    --grip-x: 100%;           /* where the fist closes on the item */
+    --grip-y: 100%;
+    position: absolute;
+    right: calc(var(--u) * 2);                     /* tucked into the lower-right corner, clear of the crosshair */
+    bottom: calc(var(--u) * 0.2);
+    width: calc(var(--u) * 16);
+    height: calc(var(--u) * 16);
+    translate: var(--bob-x) var(--bob-y);
+}
+
+/* ---- Pose modifiers: tools and weapons point AWAY from the player ---------- */
+#player-right-hand.tool-pickaxe,
+#player-right-hand.tool-axe,
+#player-right-hand.tool-shovel,
+#player-right-hand.tool-hoe     { --pose: 45deg; --scale: 1; }          /* rotate(45deg): head toward the tree or block */
+#player-right-hand.weapon-sword { --pose: 45deg; --scale: 1.1; }        /* rotate(45deg) scale(1.1): aggressive */
+#player-right-hand.ranged-bow   { --pose: 0deg; --art-elev: 0deg; --scale: 1; --grip-x: 56%; --grip-y: 50%; }
+
+/* ---- Tool: a mirrored sprite rotating around the handle pixel -------------- */
+.held-tool {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    transform-origin: bottom right;                 /* the gripped handle pixel */
+    transform: translate(0, 0) rotate(calc(var(--pose) - var(--art-elev))) scale(var(--scale));
+    will-change: transform;
+}
+.ranged-bow .held-tool { transform-origin: 56% 50%; }   /* a bow is held at its grip, not at an end */
+
+.held-frame {
+    position: absolute;
+    inset: 0;
+    /* mirror so the head leans toward the crosshair; the offset puts the handle's last pixel on the box corner */
+    transform: translate(calc(var(--u) * 2.5), calc(var(--u) * 1.5)) scaleX(-1);
+}
+.ranged-bow .held-frame { transform: scaleX(-1); }       /* bow art is authored pointing +X already */
+
+.held-sprite,
+.held-arrow {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+    -webkit-user-drag: none;
+    user-select: none;
+}
+.held-sprite { filter: drop-shadow(calc(var(--u) * -0.25) calc(var(--u) * 0.35) 0 rgba(0, 0, 0, 0.35)); }
+
+/* ---- Forearm and fist: closes over the handle so it reads as gripped -------- */
+.hand-arm {
+    position: absolute;
+    left: var(--grip-x);
+    top: var(--grip-y);
+    z-index: 2;
+    width: calc(var(--u) * 5.2);
+    height: calc(var(--u) * 15);
+    margin-left: calc(var(--u) * -2.6);
+    margin-top: calc(var(--u) * -1.6);
+    transform-origin: 50% calc(var(--u) * 1.6);
+    transform: rotate(-14deg);
+    background: linear-gradient(90deg, #c79a74 0 22%, #ba8a65 22% 78%, #96694a 78% 100%);
+    border: calc(var(--u) * 0.3) solid #5a3a26;
+    border-bottom: 0;
+    box-shadow: inset 0 calc(var(--u) * 0.5) 0 rgba(255, 255, 255, 0.12);
+}
+.ranged-bow .hand-arm { z-index: 0; }          /* the forearm stays behind the bow so it never hides a limb */
+.hand-arm::before {                                 /* knuckle line across the fist */
+    content: '';
+    position: absolute;
+    left: 0; right: 0; top: calc(var(--u) * 2.4);
+    height: calc(var(--u) * 0.3);
+    background: rgba(0, 0, 0, 0.28);
+}
+
+/* ---- Swing: 70deg (raised) -> -20deg (strike) -> snap back to the resting pose ------ */
+.is-swinging:not(.ranged-bow) .held-tool { animation: minecraftSwing 0.15s linear 1; }
+
+@keyframes minecraftSwing {
+    0% {
+        transform: translate(0, 0) rotate(calc(70deg - var(--art-elev))) scale(var(--scale));
+        animation-timing-function: cubic-bezier(0.5, 0, 0.9, 0.5);          /* accelerate into the strike */
+    }
+    70% {
+        transform: translate(calc(var(--u) * -1.4), calc(var(--u) * 1))     /* and drive the head forward and down */
+                   rotate(calc(-20deg - var(--art-elev))) scale(var(--scale));
+        animation-timing-function: cubic-bezier(0.2, 0.8, 0.3, 1);          /* snap back */
+    }
+    100% {
+        transform: translate(0, 0) rotate(calc(var(--pose) - var(--art-elev))) scale(var(--scale));
+    }
+}
+
+/* ---- Enchanted: a purple/magenta sheen clipped to the item's own silhouette ------ */
+.held-glint {
+    position: absolute;
+    inset: 0;
+    display: none;
+    pointer-events: none;
+    -webkit-mask-image: var(--sprite-mask);
+    mask-image: var(--sprite-mask);
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    image-rendering: pixelated;
+    mix-blend-mode: screen;
+    background:
+        linear-gradient(115deg,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 90, 255, 0) 26%,
+            rgba(255, 120, 255, 0.85) 41%,
+            rgba(170, 90, 255, 0.95) 50%,
+            rgba(255, 120, 255, 0.85) 59%,
+            rgba(255, 90, 255, 0) 74%,
+            rgba(255, 255, 255, 0) 100%) 100% 0 / 300% 100% no-repeat,
+        rgba(150, 60, 255, 0.32);
+    animation: enchantedGlint 2.4s linear infinite;
+}
+.is-enchanted .held-glint { display: block; }
+
+@keyframes enchantedGlint {
+    from { background-position: 100% 0, 0 0; }
+    to   { background-position: 0% 0, 0 0; }
+}
+
+/* ---- Bow: horizontal at rest; the arrow and string pull back while drawing -------- */
+.bow-rig { display: none; position: absolute; inset: 0; }
+.ranged-bow .bow-rig { display: block; }
+
+.bow-string {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+.bow-string polyline {
+    fill: none;
+    stroke: #ececec;
+    stroke-width: 0.55;
+    stroke-linejoin: miter;
+    shape-rendering: crispEdges;
+}
+
+.held-arrow { opacity: 0; transform: translateX(0); }
+.is-drawing .held-arrow,
+.is-releasing .held-arrow { opacity: 1; }
+.is-drawing .held-arrow { transform: translateX(calc(var(--draw) * var(--draw-dist) * -1)); }   /* -8px at full draw */
+.is-releasing .held-arrow { opacity: 0; }                                                     /* the arrow has left the bow */
+
+.is-drawing.is-full .held-tool { animation: bowTremble 0.09s steps(2, end) infinite; }
+.is-releasing .held-tool { animation: bowRecoil 0.22s ease-out 1; }
+
+@keyframes bowTremble {
+    0%   { transform: translate(0, 0) rotate(calc(var(--pose) - var(--art-elev))) scale(var(--scale)); }
+    100% { transform: translate(calc(var(--u) * 0.12), calc(var(--u) * -0.1)) rotate(calc(var(--pose) - var(--art-elev))) scale(var(--scale)); }
+}
+@keyframes bowRecoil {
+    0%   { transform: translate(0, 0) rotate(calc(var(--pose) - var(--art-elev))) scale(var(--scale)); }
+    25%  { transform: translate(calc(var(--u) * 0.9), calc(var(--u) * -0.4)) rotate(calc(var(--pose) - var(--art-elev) - 4deg)) scale(var(--scale)); }
+    100% { transform: translate(0, 0) rotate(calc(var(--pose) - var(--art-elev))) scale(var(--scale)); }
+}
+
+/* ---- Sword slash: a bright lens-shaped streak and sparks across the screen ------- */
+#slash-layer {
+    --u: clamp(13px, 2.8vmin, 30px);
+    position: fixed;
+    inset: 0;
+    z-index: 9;
+    overflow: hidden;
+    pointer-events: none;
+}
+.slash-sweep {
+    --dir: 1;                                       /* +1 sweeps left to right, -1 right to left */
+    position: absolute;
+    left: 50%;
+    top: 47%;
+    width: min(80vw, 1100px);
+    height: calc(var(--u) * 1.9);
+    margin-left: calc(min(80vw, 1100px) / -2);
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(205, 228, 255, 0.95) 20%, #ffffff 50%, rgba(205, 228, 255, 0.95) 80%, rgba(255, 255, 255, 0));
+    clip-path: polygon(0 50%, 14% 22%, 50% 0, 86% 22%, 100% 50%, 86% 78%, 50% 100%, 14% 78%);
+    filter: drop-shadow(0 0 6px rgba(190, 220, 255, 0.95));
+    opacity: 0;
+    animation: slashSweep 0.24s cubic-bezier(0.15, 0.8, 0.25, 1) forwards;
+}
+@keyframes slashSweep {
+    0%   { opacity: 0; transform: translateX(calc(var(--dir) * -24vw)) rotate(calc(var(--dir) * -13deg)) scaleX(0.15); }
+    22%  { opacity: 1; }
+    60%  { opacity: 0.9; }
+    100% { opacity: 0; transform: translateX(calc(var(--dir) * 24vw)) rotate(calc(var(--dir) * -13deg)) scaleX(1.05); }
+}
+.slash-spark {
+    position: absolute;
+    width: calc(var(--u) * 0.45);
+    height: calc(var(--u) * 0.45);
+    background: #e8f3ff;
+    box-shadow: 0 0 4px rgba(190, 220, 255, 0.95);
+    opacity: 0;
+    animation: slashSpark 0.34s ease-out forwards;
+}
+@keyframes slashSpark {
+    0%   { opacity: 1; transform: translate(0, 0); }
+    100% { opacity: 0; transform: translate(var(--sx), var(--sy)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .held-glint { animation: none; background-position: 50% 0, 0 0; }
+    .is-swinging:not(.ranged-bow) .held-tool,
+    .is-drawing.is-full .held-tool,
+    .is-releasing .held-tool { animation-duration: 0.01s; }
+    .slash-sweep { animation-duration: 0.12s; }
+    .slash-spark { display: none; }
+}

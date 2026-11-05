@@ -1,0 +1,284 @@
+/* ==========================================================================
+   Khmer edition theme. Loaded after style.css and held-tool.css, so it only
+   overrides: a Khmer-capable font everywhere, a temple-gold and laterite
+   colour scheme, and the new title logo.
+   ========================================================================== */
+:root {
+    --kh-font: 'Kantumruy Pro', 'Khmer OS', 'Noto Sans Khmer', sans-serif;
+    --kh-title-font: 'Moul', 'Kantumruy Pro', serif;
+    --kh-gold: #e6b84f;
+    --kh-gold-light: #f6d77a;
+    --kh-gold-dark: #8a5a1c;
+    --kh-laterite: #9c4a2c;
+    --kh-laterite-light: #c56a42;
+    --kh-laterite-dark: #5a2616;
+    --kh-sandstone: #d9c29a;
+    --kh-sandstone-dark: #8f7650;
+    --kh-ink: #2a1a0e;
+    --kh-paddy: #6fae3a;
+}
+
+/* Khmer script needs a real Khmer font; Latin text (numbers, key names) falls back gracefully */
+body, html, .mc-btn, .mc-input, .mc-gui-window, .toast, .menu-card, .menu-card h1, .title-footer,
+.splash-text, .edition-subtext, #chat-container, #chat-input, #hud, .modal-box, #death-screen,
+#game-tooltip, #item-name-popup, .pickup-toast, .loading-card, #victory-title, .gui-close-btn,
+.recipe-book, .trade-list, .furnace-help, .trade-help, .key-badge, #sleep-overlay, #notification-box {
+    font-family: var(--kh-font);
+}
+/* Khmer has tall stacked vowels and subscripts: give lines room */
+.toast .t-text, .toast .t-sub, .furnace-help, .trade-help, .modal-box p, .modal-box small, .controls-grid span,
+#game-tooltip .mc-tt-desc, .chat-msg { line-height: 1.55; }
+.toast .t-title { text-transform: none; letter-spacing: 0; font-size: 12px; }
+.mc-btn { font-weight: 600; letter-spacing: 0; }
+
+/* ---------- Title logo ---------- */
+.khmer-logo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+.khmer-logo-temple {
+    width: 128px;
+    height: 64px;
+    image-rendering: pixelated;
+    filter: drop-shadow(0 4px 0 #3b2412) drop-shadow(0 8px 10px rgba(0, 0, 0, 0.7));
+}
+.khmer-logo-text {
+    font-family: var(--kh-title-font);
+    font-size: 64px;
+    line-height: 1.5;
+    color: var(--kh-gold-light);
+    text-shadow:
+        0 2px 0 #d9a441,
+        0 4px 0 #b77a2b,
+        0 6px 0 #8a5a1c,
+        0 8px 0 #5a3a12,
+        0 12px 16px rgba(0, 0, 0, 0.85);
+    padding: 0 12px;
+}
+.edition-subtext {
+    letter-spacing: 1px;
+    font-size: 17px;
+    color: var(--kh-gold-light);
+    background: rgba(90, 38, 22, 0.75);
+    border-color: var(--kh-gold-dark);
+}
+.splash-text {
+    color: #ffe14a;
+    font-size: 19px;
+    bottom: -10px;
+    right: -70px;
+}
+.title-footer a.footer-link { color: var(--kh-gold-light); }
+.title-footer a.footer-link:hover { color: #fff; }
+
+/* ---------- Buttons: carved sandstone with a gold edge ---------- */
+.mc-btn {
+    background: linear-gradient(#b0703e, var(--kh-laterite));
+    border-top-color: var(--kh-gold-light);
+    border-left-color: var(--kh-gold-light);
+    border-bottom-color: var(--kh-laterite-dark);
+    border-right-color: var(--kh-laterite-dark);
+    color: #fff4dc;
+    text-shadow: 1px 2px 0 var(--kh-laterite-dark);
+}
+.mc-btn:hover {
+    background: linear-gradient(#cf8a4e, var(--kh-laterite-light));
+    border-top-color: #fff0b0;
+    border-left-color: #fff0b0;
+    color: #fff7a8;
+}
+.mc-btn:active { background: var(--kh-laterite-dark); }
+.mc-btn-secondary { background: linear-gradient(#7e5a3e, #5e3e28); }
+.mc-btn:disabled { background: #6a5446; color: #b8a898; }
+
+/* ---------- Menus and dialogs ---------- */
+.modal-box, .menu-card {
+    background: linear-gradient(#3a2416, #2a190e);
+    border-color: var(--kh-gold-dark);
+    border-top-color: var(--kh-gold);
+    border-left-color: var(--kh-gold);
+    border-bottom-color: #1a0e06;
+    border-right-color: #1a0e06;
+}
+.modal-title, .menu-card h1 { color: var(--kh-gold-light); text-shadow: 2px 2px 0 var(--kh-laterite-dark); }
+.mc-input { border-color: var(--kh-gold-dark); background: #1d120a; }
+.mc-input:focus { border-color: var(--kh-gold-light); }
+.btn-play {
+    background: var(--kh-paddy);
+    border-color: #9ad25e;
+    border-bottom-color: #2f5a14;
+    border-right-color: #2f5a14;
+}
+.key-badge { background: var(--kh-laterite-dark); border-color: var(--kh-gold-dark); color: var(--kh-gold-light); }
+
+/* ---------- Inventory, crafting and chest windows: pale sandstone ---------- */
+.mc-gui-window {
+    background: var(--kh-sandstone);
+    border-color: #f4e6c4;
+    border-right-color: var(--kh-sandstone-dark);
+    border-bottom-color: var(--kh-sandstone-dark);
+    color: var(--kh-ink);
+}
+.gui-header { color: var(--kh-ink); }
+
+/* ---------- Toasts ---------- */
+.toast {
+    background: linear-gradient(#3a2416, #22140a);
+    border-color: var(--kh-gold-dark);
+    border-top-color: var(--kh-gold);
+    border-left-color: var(--kh-gold);
+}
+
+/* ---------- Loading screen ---------- */
+.loading-title { color: var(--kh-gold-light); }
+
+@media (max-width: 640px) {
+    .khmer-logo-text { font-size: 40px; }
+    .khmer-logo-temple { width: 88px; height: 44px; }
+    .splash-text { right: -10px; font-size: 15px; }
+}
+
+/* ---------- In-game HUD: hotbar framed in gold and laterite, a golden XP bar ---------- */
+#hotbar-container {
+    background: rgba(58, 26, 12, 0.7);
+    border: 2px solid var(--kh-gold-dark);
+    border-top-color: var(--kh-gold);
+    padding: 3px;
+}
+.hotbar-slot { background: #a88d6a; border-color: #5a3e24; }
+.hotbar-slot.active {
+    border-color: var(--kh-gold-light);
+    outline-color: var(--kh-gold);
+    box-shadow: 0 0 10px rgba(246, 215, 122, 0.9), inset 0 0 6px rgba(246, 215, 122, 0.45);
+    background: #c4a77c;
+}
+#xp-bar-container { background: #2a1606; border-color: #5a3010; }
+#xp-bar-fill { background: linear-gradient(to bottom, #ffe27a 0%, #d99a2b 100%); }
+#xp-level { color: #ffd54a; }
+.mc-slot { background: #b39a76; border-color: #6e5638; border-right-color: #f4e6c4; border-bottom-color: #f4e6c4; }
+.mc-slot:hover { background: #c9b08a; }
+.mc-slot.craft-output { background: #b39a76; }
+.chat-msg { font-family: var(--kh-font); background: rgba(42, 20, 8, 0.65); }
+#item-name-popup { color: var(--kh-gold-light); }
+
+/* ---------- Recipe book in sandstone ---------- */
+.recipe-book { background: var(--kh-sandstone); border-color: #f4e6c4; border-right-color: var(--kh-sandstone-dark); border-bottom-color: var(--kh-sandstone-dark); color: var(--kh-ink); }
+.recipe-tab { font-family: var(--kh-font); font-size: 11px; background: #c4ab84; color: var(--kh-ink); border-color: #f4e6c4; border-right-color: var(--kh-sandstone-dark); border-bottom-color: var(--kh-sandstone-dark); }
+.recipe-tab:hover { background: #d4bc94; }
+.recipe-tab.active { background: var(--kh-sandstone); border-color: var(--kh-sandstone-dark); border-right-color: #f4e6c4; border-bottom-color: #f4e6c4; }
+.recipe-book-title, .recipe-book-help, .recipe-book-detail, .recipe-book-filter { font-family: var(--kh-font); color: var(--kh-ink); }
+
+/* ---------- Messages (welcome, pick-ups, warnings) sit at the top centre, clear of the hotbar and inventory ---------- */
+#notification-box {
+    top: 54px;
+    bottom: auto;
+    flex-direction: column-reverse;
+    z-index: 70;
+}
+.pickup-toast {
+    font-family: var(--kh-font);
+    font-size: 14px;
+    line-height: 1.5;
+    background: rgba(42, 20, 8, 0.82);
+    border-color: var(--kh-gold-dark);
+    color: #ffe9a8;
+    animation-duration: 2.2s;
+}
+@keyframes fadeUp {
+    0% { opacity: 0; transform: translateY(-10px); }
+    12% { opacity: 1; transform: translateY(0); }
+    85% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-6px); }
+}
+
+/* ==========================================================================
+   Bigger pixel-art icons: every inventory, chest, furnace and crafting slot grows
+   from 40px to 50px, with the item picture drawn at 38px.
+   ========================================================================== */
+.mc-slot { width: 50px; height: 50px; border-width: 3px; }
+.mc-slot .slot-preview { width: 38px; height: 38px; }
+.mc-slot .slot-fallback { font-size: 28px; }
+.mc-slot .slot-count { font-size: 13px; right: 4px; bottom: 3px; font-family: var(--kh-font); font-weight: 700; }
+.inventory-grid-27, .inventory-grid-9 { grid-template-columns: repeat(9, 50px); gap: 5px; }
+.crafting-grid-2x2 { grid-template-columns: repeat(2, 50px); gap: 5px; }
+.crafting-grid-3x3 { grid-template-columns: repeat(3, 50px); gap: 5px; }
+#character-preview-panel.state-survival-inventory { grid-template-columns: 50px 150px 50px; }
+#character-preview-panel.state-survival-inventory .player-preview-box { width: 150px; height: 215px; }
+.armor-slot-column { height: 215px; }
+#character-preview-panel.state-crafting-table { grid-template-columns: 110px 50px; }
+#character-preview-panel.state-crafting-table .player-preview-box { width: 110px; height: 150px; }
+
+/* ---------- Crafting window: titled grid, clear button, animated arrow, big gold output ---------- */
+.craft-col { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.craft-col-title { font-size: 12px; font-weight: 700; color: var(--kh-ink); letter-spacing: 0.3px; }
+.craft-clear-btn { padding: 4px 12px; font-size: 12px; margin-top: 4px; }
+.crafting-arrow {
+    display: flex; flex-direction: column; align-items: center;
+    font-size: 30px; color: #5a3a1c; padding: 0 6px;
+    animation: khArrow 1.5s ease-in-out infinite;
+}
+.crafting-arrow::after { content: 'បង្កើត'; font-size: 11px; font-weight: 700; font-family: var(--kh-font); color: var(--kh-ink); }
+@keyframes khArrow { 0%, 100% { transform: translateX(0); opacity: 0.8; } 50% { transform: translateX(5px); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .crafting-arrow { animation: none; } }
+.mc-slot.craft-output {
+    width: 76px; height: 76px;
+    border: 4px solid var(--kh-gold);
+    background: #c9b08a;
+    box-shadow: 0 0 0 2px var(--kh-gold-dark), 0 6px 14px rgba(0, 0, 0, 0.35);
+}
+.mc-slot.craft-output:hover { background: #d8c09a; }
+.mc-slot.craft-output .slot-preview { width: 56px; height: 56px; }
+.craft-out-col { margin-bottom: 26px; }
+#output-item-name-text {
+    top: calc(100% + 8px); bottom: auto;
+    font-family: var(--kh-font); font-size: 13px; font-weight: 700;
+    color: #1f5a22; text-shadow: none;
+    background: rgba(255, 244, 214, 0.9); border: 1px solid var(--kh-gold-dark);
+    padding: 1px 8px; border-radius: 3px;
+}
+
+/* ---------- Recipe book: a list of cards ---------- */
+.mc-modal.is-open .recipe-book { width: 330px; }
+.recipe-book > * { min-width: 300px; }
+.recipe-book-list { display: flex; flex-direction: column; gap: 6px; padding-right: 4px; }
+.recipe-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px; cursor: pointer;
+    background: #e4d4b2;
+    border: 2px solid #f4e6c4; border-right-color: var(--kh-sandstone-dark); border-bottom-color: var(--kh-sandstone-dark);
+    border-radius: 3px;
+    transition: border-color 0.1s ease, background 0.1s ease;
+}
+.recipe-row:hover { border-color: var(--kh-gold); background: #efe0bd; }
+.recipe-row .mc-slot.recipe-card { flex: none; width: 46px; height: 46px; }
+.recipe-row .mc-slot.recipe-card .slot-preview { width: 34px; height: 34px; }
+.recipe-row-text { flex: 1; min-width: 0; }
+.recipe-row-name { font-size: 13px; font-weight: 700; color: var(--kh-ink); line-height: 1.5; }
+.recipe-row-sub { font-size: 11px; color: #5a4630; line-height: 1.45; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recipe-row-btn { flex: none; padding: 3px 10px; font-size: 12px; }
+.recipe-row.missing { background: #e8c4b4; }
+.recipe-row.missing .recipe-row-sub { color: #8a2a1c; }
+.recipe-row.missing .mc-slot.recipe-card { background: #b39a76; }
+.recipe-row.needs-table { opacity: 0.55; }
+.recipe-book-detail { color: var(--kh-ink); }
+
+/* Small screens: back to the smaller slots so the windows still fit */
+@media (max-width: 640px) {
+    .mc-slot { width: 38px; height: 38px; border-width: 2px; }
+    .mc-slot .slot-preview { width: 28px; height: 28px; }
+    .inventory-grid-27, .inventory-grid-9 { grid-template-columns: repeat(9, 38px); gap: 3px; }
+    .crafting-grid-2x2 { grid-template-columns: repeat(2, 38px); }
+    .crafting-grid-3x3 { grid-template-columns: repeat(3, 38px); }
+    .mc-slot.craft-output { width: 56px; height: 56px; }
+    .mc-slot.craft-output .slot-preview { width: 40px; height: 40px; }
+}
+
+/* Legendary items: gold name, and the sapphire Preah Khan shimmers blue in every slot */
+#game-tooltip .mc-tt-name.rarity-legendary { color: #ffaa00; }
+.slot-preview.kh-glint { animation: kh-glint 1.5s ease-in-out infinite alternate; }
+@keyframes kh-glint {
+    0%   { filter: drop-shadow(0 0 2px #5555ff) brightness(1); }
+    100% { filter: drop-shadow(0 0 7px #00ffff) brightness(1.25); }
+}

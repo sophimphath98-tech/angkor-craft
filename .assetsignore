@@ -1,0 +1,10 @@
+# Files Cloudflare should not serve as part of the game
+.git
+.claude
+.wrangler
+node_modules
+worker
+docs
+wrangler.jsonc
+.assetsignore
+README.md
