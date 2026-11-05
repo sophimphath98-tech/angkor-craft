@@ -1,0 +1,13 @@
+// Cloudflare Worker config: the game's files are served as static assets, worker/index.js adds /api/turn.
+// Deploy with: npx wrangler deploy
+{
+  "name": "minecraft-javascript-edition-v1-0-0",
+  "main": "worker/index.js",
+  "compatibility_date": "2025-09-01",
+  "assets": {
+    "directory": ".",
+    "binding": "ASSETS"
+  },
+  // Keep the TURN_KEY_ID / TURN_KEY_API_TOKEN variables set in the dashboard when deploying
+  "keep_vars": true
+}

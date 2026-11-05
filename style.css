@@ -1,0 +1,1862 @@
+* {
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+    margin: 0;
+    padding: 0;
+}
+
+body, html {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #000;
+    font-family: 'Minecraft', 'Courier New', Courier, monospace;
+}
+
+#gameCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    z-index: 1;
+}
+
+/* Underwater Visual Vignette Overlay */
+#underwater-overlay {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, rgba(16, 85, 175, 0.28) 0%, rgba(5, 30, 72, 0.65) 100%);
+    box-shadow: inset 0 0 120px rgba(3, 22, 55, 0.82);
+    display: none;
+    z-index: 5;
+}
+
+/* Damage Flash Vignette */
+#damage-vignette {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    background: radial-gradient(circle, rgba(255, 0, 0, 0) 45%, rgba(220, 20, 20, 0.65) 100%);
+    opacity: 0;
+    transition: opacity 0.12s ease-out;
+    z-index: 6;
+}
+#damage-vignette.active {
+    opacity: 1;
+}
+
+/* Survival HUD (Hearts, Armor, Hunger, Oxygen, XP) */
+#survival-hud {
+    position: absolute;
+    bottom: 74px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 440px;
+    display: flex;
+    flex-direction: column;
+    pointer-events: none;
+    z-index: 10;
+}
+.hud-top-row, .hud-main-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    height: 18px;
+}
+.hud-top-row {
+    margin-bottom: 2px;
+}
+.hud-main-row {
+    margin-bottom: 3px;
+}
+#armor-bar {
+    display: flex;
+    gap: 1px;
+    pointer-events: auto;
+    cursor: pointer;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.8));
+}
+#armor-bar:hover {
+    transform: scale(1.04);
+}
+#oxygen-bar {
+    display: flex;
+    gap: 1px;
+    flex-direction: row-reverse;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.8));
+    transition: opacity 0.3s ease;
+}
+#health-bar {
+    display: flex;
+    gap: 1px;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.8));
+}
+#hunger-bar {
+    display: flex;
+    gap: 1px;
+    flex-direction: row-reverse;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.8));
+}
+.hud-icon {
+    width: 18px;
+    height: 18px;
+    image-rendering: pixelated;
+    display: inline-block;
+}
+
+/* XP Bar Row */
+.hud-xp-row {
+    position: relative;
+    width: 100%;
+    height: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+#xp-bar-container {
+    width: 100%;
+    height: 5px;
+    background: #0a1405;
+    border: 1px solid #1c360b;
+    border-radius: 1px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.9);
+}
+#xp-bar-fill {
+    height: 100%;
+    width: 70%;
+    background: linear-gradient(to bottom, #88f83b 0%, #52ab1e 100%);
+    transition: width 0.15s ease-out;
+}
+#xp-level {
+    position: absolute;
+    top: -11px;
+    font-size: 13px;
+    font-weight: 900;
+    color: #80ff20;
+    text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+    font-family: monospace, monospace;
+    pointer-events: none;
+}
+
+/* Crosshair */
+#crosshair {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 18px; height: 18px;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 10;
+}
+#crosshair::before {
+    content: ''; position: absolute;
+    top: 7px; left: 0; width: 18px; height: 4px;
+    background: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.9);
+}
+#crosshair::after {
+    content: ''; position: absolute;
+    top: 0; left: 7px; width: 4px; height: 18px;
+    background: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.9);
+}
+
+/* 9-Slot Hotbar */
+#hotbar-container {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    background: rgba(0, 0, 0, 0.55);
+    padding: 4px;
+    border-radius: 6px;
+    border: 2px solid #2a2a2a;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.6);
+    pointer-events: auto;
+    z-index: 10;
+}
+.hotbar-slot {
+    /* The item icon fills the whole inside of the slot (--hotbar-icon); the slot is that plus its border */
+    --hotbar-icon: 48px;
+    width: calc(var(--hotbar-icon) + 6px);
+    height: calc(var(--hotbar-icon) + 6px);
+    background: #8b8b8b;
+    margin: 0 2px;
+    border: 3px solid #373737;
+    border-top-color: #373737;
+    border-left-color: #373737;
+    border-bottom-color: #ffffff;
+    border-right-color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: pointer;
+    box-sizing: border-box;
+    transition: transform 0.08s ease;
+}
+.hotbar-slot.active {
+    border: 3px solid #ffffff;                /* same width as other slots, so the icon keeps its full size */
+    outline: 2px solid #ffffff;
+    box-shadow: 0 0 8px rgba(255,255,255,0.9), inset 0 0 6px rgba(255,255,255,0.4);
+    transform: scale(1.08);
+    z-index: 2;
+    background: #9b9b9b;
+}
+.slot-preview {
+    width: 34px;
+    height: 34px;
+    image-rendering: pixelated;
+    pointer-events: none;
+}
+.slot-number {
+    /* Small key badge laid over the icon's top-left corner; it takes no space from the item */
+    position: absolute;
+    top: 1px;
+    left: 2px;
+    z-index: 3;
+    font-size: 9px;
+    line-height: 1;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.7);
+    text-shadow: 1px 1px 0 #000;
+    pointer-events: none;
+}
+.hotbar-slot > .slot-preview {
+    width: var(--hotbar-icon);
+    height: var(--hotbar-icon);
+}
+.hotbar-slot > .slot-fallback { font-size: 34px; }
+.hotbar-slot > .slot-count { z-index: 3; bottom: 1px; right: 2px; font-size: 14px; }
+.hotbar-slot > .dura-bar { z-index: 3; }           /* the wear bar stays visible over the bigger icon */
+/* Narrow screens: smaller slots so all nine still fit */
+@media (max-width: 600px) {
+    .hotbar-slot { --hotbar-icon: 32px; }
+    .hotbar-slot > .slot-fallback { font-size: 24px; }
+}
+.slot-count {
+    position: absolute;
+    bottom: 2px;
+    right: 4px;
+    font-size: 13px;
+    font-weight: 800;
+    font-family: monospace, monospace;
+    color: #ffffff;
+    text-shadow: 1px 1px 0 #000, 2px 2px 0 #000;
+    pointer-events: none;
+}
+
+/* Debug / Stats HUD */
+#hud {
+    position: absolute;
+    top: 12px;
+    left: 14px;
+    color: #ffffff;
+    font-family: monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    text-shadow: 1px 1px 2px #000, 0 0 4px #000;
+    pointer-events: none;
+    z-index: 10;
+}
+
+/* Notification Toast */
+#notification-box {
+    position: absolute;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    pointer-events: none;
+    z-index: 10;
+}
+.pickup-toast {
+    background: rgba(0, 0, 0, 0.75);
+    color: #55ff55;
+    padding: 6px 14px;
+    border-radius: 4px;
+    border: 1px solid #33aa33;
+    font-family: monospace;
+    font-size: 13px;
+    font-weight: bold;
+    animation: fadeUp 1.2s forwards;
+}
+@keyframes fadeUp {
+    0% { opacity: 0; transform: translateY(10px); }
+    15% { opacity: 1; transform: translateY(0); }
+    80% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-15px); }
+}
+
+/* ========================================== */
+/* BLOCKY UI BUTTONS & INPUTS                 */
+/* ========================================== */
+.mc-btn {
+    background: #6c6c6c;
+    border: 2px solid #000;
+    border-top: 2px solid #a8a8a8;
+    border-left: 2px solid #a8a8a8;
+    border-bottom: 2px solid #3c3c3c;
+    border-right: 2px solid #3c3c3c;
+    color: #e0e0e0;
+    text-shadow: 2px 2px 0 #1b1b1b;
+    font-family: 'Minecraft', monospace;
+    font-size: 16px;
+    font-weight: bold;
+    padding: 10px 18px;
+    cursor: pointer;
+    outline: none;
+    display: inline-block;
+    box-sizing: border-box;
+    transition: background 0.05s ease;
+}
+.mc-btn:hover {
+    background: #7c7c7c;
+    border-top: 2px solid #c0c0c0;
+    border-left: 2px solid #c0c0c0;
+    color: #ffffa0;
+}
+.mc-btn:active {
+    border-top: 2px solid #3c3c3c;
+    border-left: 2px solid #3c3c3c;
+    border-bottom: 2px solid #a8a8a8;
+    border-right: 2px solid #a8a8a8;
+    background: #5c5c5c;
+}
+.mc-btn-large {
+    width: 380px;
+    height: 44px;
+    font-size: 18px;
+    margin: 4px 0;
+}
+.mc-btn-half {
+    width: 186px;
+    height: 44px;
+    font-size: 16px;
+}
+.mc-btn-secondary {
+    background: #505050;
+}
+.mc-input {
+    background: #111;
+    border: 2px solid #a0a0a0;
+    color: #fff;
+    font-family: monospace;
+    font-size: 15px;
+    padding: 8px 12px;
+    width: 100%;
+    outline: none;
+    box-sizing: border-box;
+}
+.mc-input:focus {
+    border-color: #ffffff;
+}
+
+/* ========================================== */
+/* ANGKOR CRAFT TITLE SCREEN                  */
+/* ========================================== */
+#title-screen {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    /* The 3D diorama behind it provides the sky; this only adds a soft vignette so the logo and buttons stay readable */
+    background: radial-gradient(ellipse at 50% 55%, rgba(0,0,0,0) 45%, rgba(8,20,48,0.38) 100%);
+    pointer-events: auto;
+    overflow: hidden;
+}
+/* (stars removed: the diorama has a real sky) */
+#title-screen::before {
+    display: none;
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 60%;
+    pointer-events: none;
+    background-image:
+        radial-gradient(1px 1px at 10% 15%, #fff 0%, transparent 100%),
+        radial-gradient(1px 1px at 22% 8%,  #fff 0%, transparent 100%),
+        radial-gradient(1px 1px at 35% 20%, #fff 0%, transparent 100%),
+        radial-gradient(1px 1px at 48% 5%,  #fff 0%, transparent 100%),
+        radial-gradient(1px 1px at 60% 18%, #fff 0%, transparent 100%),
+        radial-gradient(1px 1px at 74% 10%, #fff 0%, transparent 100%),
+        radial-gradient(1px 1px at 85% 25%, #fff 0%, transparent 100%),
+        radial-gradient(1px 1px at 92% 7%,  #fff 0%, transparent 100%),
+        radial-gradient(2px 2px at 15% 30%, rgba(255,255,255,0.6) 0%, transparent 100%),
+        radial-gradient(2px 2px at 55% 28%, rgba(255,255,255,0.5) 0%, transparent 100%),
+        radial-gradient(2px 2px at 80% 35%, rgba(255,255,255,0.6) 0%, transparent 100%);
+    opacity: 0.7;
+    z-index: 0;
+}
+
+/* (ground strip removed: the diorama has real terrain) */
+#title-screen::after {
+    display: none;
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 100%; height: 28%;
+    pointer-events: none;
+    background:
+        /* Grass top layer */
+        linear-gradient(to bottom, #5a9e35 0px, #5a9e35 24px, #8b5e3c 24px, #7a4e2c 100%);
+    /* Pixel-art block border on top of grass */
+    border-top: 4px solid #4a8828;
+    z-index: 0;
+}
+
+/* Decorative sun in the sky */
+.title-panorama-overlay {
+    display: none;
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    /* A pixelated sun in the top-right area */
+    background-image:
+        radial-gradient(circle 48px at 80% 22%, #ffe870 0%, #ffc800 55%, transparent 56%);
+    z-index: 1;
+}
+.title-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    justify-content: space-between;
+    padding: 36px 20px 16px 20px;
+}
+
+/* Logo & Edition Ribbon */
+.logo-wrapper {
+    position: relative;
+    margin-top: 24px;
+    text-align: center;
+}
+.minecraft-logo {
+    display: flex;
+    justify-content: center;
+    gap: 3px;
+    font-size: 70px;
+    font-weight: 900;
+    font-family: 'Minecraft', 'Impact', monospace;
+    letter-spacing: 3px;
+    color: #e0e0e0;
+    text-shadow:
+        0 2px 0 #bcbcbc,
+        0 4px 0 #909090,
+        0 6px 0 #606060,
+        0 8px 0 #3a3a3a,
+        0 10px 0 #1a1a1a,
+        0 14px 16px rgba(0,0,0,0.9);
+}
+.mc-letter {
+    display: inline-block;
+    color: #f0f0f0;
+}
+.edition-subtext {
+    font-size: 20px;
+    font-weight: 900;
+    color: #ffffff;
+    letter-spacing: 5px;
+    text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 0 4px 8px #000;
+    margin-top: 10px;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.45);
+    padding: 3px 18px;
+    display: inline-block;
+    border: 2px solid #333333;
+    border-radius: 2px;
+}
+.splash-text {
+    position: absolute;
+    bottom: -16px;
+    right: -55px;
+    color: #ffff00;
+    font-size: 21px;
+    font-weight: 900;
+    font-family: 'Minecraft', monospace;
+    text-shadow: 2px 2px 0 #3f3f00, 0 0 8px rgba(0,0,0,0.95);
+    transform: rotate(-20deg);
+    animation: splashPulse 1.8s infinite alternate ease-in-out;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 5;
+}
+@keyframes splashPulse {
+    0% { transform: rotate(-20deg) scale(1.0); }
+    100% { transform: rotate(-20deg) scale(1.15); }
+}
+
+/* Menu Button Stack */
+.menu-button-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 35px;
+}
+.menu-btn-row {
+    display: flex;
+    gap: 8px;
+    width: 380px;
+    justify-content: space-between;
+}
+.title-footer {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    color: #ffffff;
+    font-size: 13px;
+    font-family: monospace;
+    text-shadow: 1px 1px 2px #000;
+    padding: 0 16px;
+}
+
+/* ========================================== */
+/* MODALS (Singleplayer, Multiplayer, Options)*/
+/* ========================================== */
+.mc-modal {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 60;
+    backdrop-filter: blur(4px);
+}
+.modal-box {
+    background: #2b2b2b;
+    border: 4px solid #4a4a4a;
+    border-top-color: #6a6a6a;
+    border-left-color: #6a6a6a;
+    border-bottom-color: #111111;
+    border-right-color: #111111;
+    padding: 24px 30px;
+    width: 500px;
+    max-width: 92%;
+    text-align: center;
+    box-shadow: 0 10px 35px rgba(0,0,0,0.9);
+}
+.modal-box-wide {
+    width: 620px;
+}
+.modal-title {
+    color: #ffffff;
+    font-size: 22px;
+    font-family: monospace;
+    text-shadow: 2px 2px 0 #000;
+    margin-bottom: 16px;
+}
+.modal-btn-row {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+.modal-btn-row .mc-btn {
+    flex: 1;
+}
+.mc-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+.form-group {
+    text-align: left;
+    margin-bottom: 14px;
+}
+.form-group label {
+    display: block;
+    color: #ccc;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+/* World & Server List Container */
+.world-list {
+    background: #141414;
+    border: 2px solid #3c3c3c;
+    height: 180px;
+    overflow-y: auto;
+    margin-bottom: 14px;
+    padding: 6px;
+    text-align: left;
+}
+.world-item {
+    padding: 8px 10px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #fff;
+    font-family: monospace;
+    font-size: 14px;
+}
+.world-item:hover {
+    background: #222;
+}
+.world-item.selected {
+    background: #3a3a3a;
+    border-color: #ffffff;
+}
+.world-item-name {
+    font-weight: bold;
+    color: #ffffaa;
+}
+.world-item-meta {
+    font-size: 11px;
+    color: #888;
+}
+
+/* Options Grid */
+.options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 20px;
+    text-align: left;
+    margin-bottom: 10px;
+}
+.option-item label {
+    display: block;
+    color: #ddd;
+    font-size: 13px;
+    font-family: monospace;
+    margin-bottom: 6px;
+}
+.mc-slider {
+    width: 100%;
+    accent-color: #5b8731;
+    cursor: pointer;
+}
+
+/* ========================================== */
+/* ANGKOR CRAFT LOADING SCREEN                */
+/* ========================================== */
+#loading-screen {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 80;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.loading-backdrop {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-size: cover;
+    background-position: center;
+    filter: brightness(0.7) blur(2px);
+    transform: scale(1.05);
+}
+.loading-overlay {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.loading-card {
+    background: rgba(20, 20, 20, 0.88);
+    border: 4px solid #4a4a4a;
+    border-top-color: #6a6a6a;
+    border-left-color: #6a6a6a;
+    border-bottom-color: #111111;
+    border-right-color: #111111;
+    padding: 28px 40px;
+    width: 480px;
+    max-width: 90%;
+    text-align: center;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.9);
+}
+.loading-title {
+    color: #ffffff;
+    font-size: 24px;
+    font-family: monospace;
+    text-shadow: 2px 2px 0 #000;
+    margin-bottom: 18px;
+}
+.loading-bar-border {
+    width: 100%;
+    height: 22px;
+    background: #101010;
+    border: 3px solid #373737;
+    border-bottom-color: #606060;
+    border-right-color: #606060;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+.loading-bar-fill {
+    width: 0%;
+    height: 100%;
+    background: repeating-linear-gradient(
+        45deg,
+        #4ba025,
+        #4ba025 10px,
+        #5ec431 10px,
+        #5ec431 20px
+    );
+    transition: width 0.15s ease-out;
+}
+.loading-status-row {
+    display: flex;
+    justify-content: space-between;
+    color: #e0e0e0;
+    font-family: monospace;
+    font-size: 13px;
+    text-shadow: 1px 1px 0 #000;
+}
+
+/* ========================================== */
+/* IN-GAME MULTIPLAYER CHAT                   */
+/* ========================================== */
+#chat-container {
+    position: absolute;
+    bottom: 110px;
+    left: 20px;
+    width: 380px;
+    display: flex;
+    flex-direction: column;
+    pointer-events: none;
+    z-index: 15;
+}
+#chat-messages {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 160px;
+    overflow-y: hidden;
+}
+.chat-msg {
+    background: rgba(0, 0, 0, 0.55);
+    color: #ffffff;
+    padding: 3px 8px;
+    border-radius: 2px;
+    font-family: monospace;
+    font-size: 13px;
+    text-shadow: 1px 1px 1px #000;
+    animation: fadeMessage 8s forwards;
+}
+@keyframes fadeMessage {
+    0% { opacity: 1; }
+    85% { opacity: 1; }
+    100% { opacity: 0; }
+}
+#chat-input-wrapper {
+    margin-top: 6px;
+    pointer-events: auto;
+}
+#chat-input {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    border: 2px solid #666;
+    color: #ffffff;
+    padding: 6px 10px;
+    font-family: monospace;
+    font-size: 13px;
+    outline: none;
+}
+#chat-input:focus {
+    border-color: #ffffff;
+}
+
+/* Pause / Instructions Screen */
+#overlay {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(10, 15, 25, 0.82);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+}
+.menu-card {
+    background: #2b2b2b;
+    border: 4px solid #4a4a4a;
+    border-top-color: #6a6a6a;
+    border-left-color: #6a6a6a;
+    border-bottom-color: #111111;
+    border-right-color: #111111;
+    padding: 24px 36px;
+    max-width: 600px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+}
+.menu-card h1 {
+    margin: 0 0 12px 0;
+    font-size: 30px;
+    color: #ffff55;
+    text-shadow: 2px 2px 0 #3f3f00;
+    font-family: monospace;
+    letter-spacing: 1px;
+}
+.btn-play {
+    background: #5b8731;
+    border: 3px solid #7cb742;
+    border-bottom-color: #2e4418;
+    border-right-color: #2e4418;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    padding: 10px 24px;
+    margin: 14px 0;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    font-family: monospace;
+    display: inline-block;
+}
+.btn-play:hover {
+    background: #6ea43a;
+}
+.controls-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 5px 12px;
+    text-align: left;
+    margin-top: 10px;
+    font-size: 12px;
+    background: rgba(0,0,0,0.4);
+    padding: 10px;
+    border-radius: 4px;
+    font-family: monospace;
+}
+.key-badge {
+    background: #444;
+    border: 1px solid #777;
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: #55ffff;
+    font-weight: bold;
+    text-align: center;
+}
+#error-overlay {
+    display: none;
+    position: absolute;
+    top: 20px; left: 50%; transform: translateX(-50%);
+    background: #ff3333; color: white; padding: 12px 24px;
+    border-radius: 6px; font-weight: bold; z-index: 200;
+}
+
+/* ========================================== */
+/* MINECRAFT INVENTORY & CRAFTING GUI         */
+/* ========================================== */
+.mc-gui-window {
+    background: #c6c6c6;
+    border: 4px solid #ffffff;
+    border-right-color: #555555;
+    border-bottom-color: #555555;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.85);
+    padding: 14px 18px;
+    color: #3f3f3f;
+    font-family: 'Minecraft', monospace;
+    position: relative;
+    user-select: none;
+    -webkit-user-select: none;
+}
+.gui-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 15px;
+    font-weight: bold;
+    margin-bottom: 12px;
+    color: #3f3f3f;
+    letter-spacing: 0.5px;
+}
+.gui-close-btn {
+    cursor: pointer;
+    font-size: 16px;
+    color: #555555;
+    padding: 0 6px;
+    font-family: monospace;
+    font-weight: bold;
+}
+.gui-close-btn:hover {
+    color: #000000;
+}
+.inventory-crafting-top {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    margin-bottom: 14px;
+}
+.player-preview-box {
+    width: 96px;
+    height: 128px;
+    background: #000000;
+    border: 2px solid #373737;
+    border-right-color: #ffffff;
+    border-bottom-color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+.crafting-2x2-section, .crafting-3x3-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.crafting-grid-2x2 {
+    display: grid;
+    grid-template-columns: repeat(2, 40px);
+    gap: 4px;
+}
+.crafting-grid-3x3 {
+    display: grid;
+    grid-template-columns: repeat(3, 40px);
+    gap: 4px;
+}
+.crafting-label, .storage-label {
+    display: block;
+    font-size: 13px;
+    font-weight: bold;
+    color: #3f3f3f;
+    margin-bottom: 6px;
+}
+.crafting-arrow {
+    font-size: 24px;
+    font-weight: bold;
+    color: #555555;
+    padding: 0 4px;
+    user-select: none;
+}
+.mc-slot {
+    width: 40px;
+    height: 40px;
+    background: #8b8b8b;
+    border: 2px solid #373737;
+    border-right-color: #ffffff;
+    border-bottom-color: #ffffff;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+.mc-slot:hover {
+    background: #a4a4a4;
+}
+.mc-slot.craft-output {
+    width: 46px;
+    height: 46px;
+    background: #8b8b8b;
+    border: 2px solid #292929;
+    border-right-color: #ffffff;
+    border-bottom-color: #ffffff;
+}
+.mc-slot.craft-output:hover {
+    background: #9c9c9c;
+}
+.mc-slot .slot-preview {
+    width: 28px;
+    height: 28px;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    pointer-events: none;
+}
+.mc-slot.craft-output .slot-preview {
+    width: 32px;
+    height: 32px;
+}
+.mc-slot .slot-count {
+    position: absolute;
+    right: 3px;
+    bottom: 2px;
+    font-size: 11px;
+    font-weight: bold;
+    color: #ffffff;
+    text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+    pointer-events: none;
+    font-family: monospace;
+}
+.inventory-storage-section {
+    margin-top: 14px;
+}
+.inventory-grid-27 {
+    display: grid;
+    grid-template-columns: repeat(9, 40px);
+    gap: 4px;
+}
+.inventory-hotbar-section {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 2px solid #a8a8a8;
+}
+.inventory-grid-9 {
+    display: grid;
+    grid-template-columns: repeat(9, 40px);
+    gap: 4px;
+}
+#cursor-item-preview {
+    position: fixed;
+    pointer-events: none;
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    transform: translate(-50%, -50%);
+}
+#cursor-item-preview img {
+    width: 32px;
+    height: 32px;
+    image-rendering: pixelated;
+}
+#cursor-item-preview .cursor-count {
+    position: absolute;
+    right: -2px;
+    bottom: -2px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #ffffff;
+    text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+    font-family: monospace;
+}
+
+
+/* ========================================== */
+/* CRAFTING HINT, BOSS BAR & VICTORY TITLE    */
+/* ========================================== */
+.mc-modal.has-recipe-book {
+    gap: 10px;
+    flex-wrap: wrap;
+    align-content: center;
+}
+.recipe-book {
+    width: 260px;
+    max-height: 470px;
+    flex-direction: column;
+    gap: 8px;
+    background: #c6c6c6;
+    border: 4px solid #ffffff;
+    border-right-color: #555555;
+    border-bottom-color: #555555;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.85);
+    padding: 12px;
+    color: #3f3f3f;
+    font-family: 'Minecraft', monospace;
+    user-select: none;
+    -webkit-user-select: none;
+    align-self: stretch;
+}
+.recipe-book-title {
+    font-size: 15px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+.recipe-book-filter {
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+.recipe-book-list {
+    display: grid;
+    grid-template-columns: repeat(5, 40px);
+    gap: 4px;
+    align-content: start;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 88px;
+    flex: 1;
+}
+/* Narrow screens: the book sits above the window and the page scrolls */
+@media (max-width: 760px) {
+    .mc-modal.has-recipe-book {
+        align-items: flex-start;
+        align-content: flex-start;
+        overflow-y: auto;
+        padding: 12px 0;
+    }
+    .recipe-book { max-height: 260px; }
+}
+.recipe-card.missing {
+    background: #b77b7b;
+}
+.recipe-card.missing:hover {
+    background: #c98d8d;
+}
+.recipe-card.needs-table {
+    opacity: 0.4;
+}
+.recipe-book-empty {
+    grid-column: 1 / -1;
+    font-size: 11px;
+    line-height: 1.45;
+    color: #4a4a4a;
+}
+.recipe-book-detail {
+    min-height: 54px;
+    font-size: 11px;
+    line-height: 1.45;
+    color: #4a4a4a;
+    border-top: 2px solid #a8a8a8;
+    padding-top: 6px;
+}
+.recipe-book-detail b {
+    color: #2b2b2b;
+    font-size: 12px;
+}
+.recipe-book-status {
+    margin-top: 2px;
+    color: #7a2020;
+}
+.recipe-book-status.ok { color: #1f6b22; }
+.recipe-book-help {
+    font-size: 10px;
+    color: #5a5a5a;
+}
+.gui-header .gui-book-btn {
+    margin-left: auto;
+    margin-right: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Minecraft', monospace;
+    font-size: 12px;
+    color: #3f3f3f;
+    background: #b0b0b0;
+    border: 2px solid #ffffff;
+    border-right-color: #555555;
+    border-bottom-color: #555555;
+    padding: 3px 8px;
+    cursor: pointer;
+}
+.gui-header .gui-book-btn:hover { background: #bcbcbc; }
+.gui-header .gui-book-btn.active {
+    border: 2px solid #555555;
+    border-right-color: #ffffff;
+    border-bottom-color: #ffffff;
+    background: #a2a2a2;
+}
+.gui-book-icon {
+    width: 12px;
+    height: 14px;
+    background: #3c8c2f;
+    border: 1px solid #1f4f18;
+    box-shadow: inset 2px 0 0 #8fd16a;
+}
+
+#boss-bar {
+    position: fixed;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(520px, 70vw);
+    z-index: 45;
+    pointer-events: none;
+    text-align: center;
+    font-family: 'Minecraft', monospace;
+}
+#boss-bar .boss-name {
+    color: #ffffff;
+    font-size: 15px;
+    margin-bottom: 4px;
+    text-shadow: 2px 2px 0 #000;
+}
+#boss-bar .boss-track {
+    height: 10px;
+    background: #2a1038;
+    border: 2px solid #000;
+    box-shadow: 0 0 0 1px #5a2a78;
+}
+#boss-bar .boss-fill {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(#e070ff, #a020d0);
+    transition: width 0.15s linear;
+}
+
+#victory-title {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    pointer-events: none;
+    opacity: 0;
+    font-family: 'Minecraft', monospace;
+    text-shadow: 3px 3px 0 #000;
+}
+#victory-title span { font-size: 64px; color: #ffe27a; letter-spacing: 6px; }
+#victory-title small { font-size: 20px; color: #ffffff; }
+#victory-title.show { animation: victoryFade 6s ease-out forwards; }
+@keyframes victoryFade {
+    0% { opacity: 0; transform: scale(0.85); }
+    12% { opacity: 1; transform: scale(1); }
+    80% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+/* Item name above the hotbar */
+#item-name-popup {
+    position: fixed;
+    left: 50%;
+    bottom: 96px;
+    transform: translateX(-50%);
+    z-index: 40;
+    pointer-events: none;
+    color: #fff;
+    font-family: 'Minecraft', monospace;
+    font-size: 15px;
+    text-shadow: 2px 2px 0 #000;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+/* Death screen */
+#death-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 75;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: radial-gradient(ellipse at center, rgba(120, 10, 10, 0.55), rgba(40, 0, 0, 0.85));
+    font-family: 'Minecraft', monospace;
+    color: #fff;
+    text-shadow: 3px 3px 0 #000;
+}
+#death-screen h1 { font-size: 56px; margin: 0 0 6px 0; }
+#death-screen p { margin: 0; font-size: 18px; }
+#death-screen #death-score { color: #ffe27a; margin-bottom: 14px; }
+#death-screen .mc-btn { width: 320px; }
+
+#player-preview-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* Toasts: advancement-style cards (crafted items, unlocked recipes, warnings) */
+#toast-stack {
+    position: fixed;
+    top: 56px;
+    right: 14px;
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 80;
+    pointer-events: none;
+}
+.toast {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px 8px 8px;
+    background: linear-gradient(#2e2e2e, #1b1b1b);
+    border: 2px solid #5a5a5a;
+    border-top-color: #8a8a8a;
+    border-left-color: #8a8a8a;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+    font-family: 'Minecraft', monospace;
+    color: #fff;
+    transform: translateX(115%);
+    animation: toastIn 0.38s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+}
+.toast.out { animation: toastOut 0.42s ease-in forwards; }
+.toast img {
+    width: 40px;
+    height: 40px;
+    flex: none;
+    image-rendering: pixelated;
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px solid #3a3a3a;
+    padding: 2px;
+}
+.toast .t-body { min-width: 0; }
+.toast .t-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: #ffe27a; margin-bottom: 2px; }
+.toast .t-text { font-size: 13px; line-height: 1.25; text-shadow: 1px 1px 0 #000; word-wrap: break-word; }
+.toast .t-sub { font-size: 11px; color: #b8b8b8; margin-top: 2px; }
+.toast .t-sub:empty { display: none; }
+.toast.craft { border-color: #4f9a3f; border-top-color: #7fd06a; border-left-color: #7fd06a; }
+.toast.craft .t-title { color: #8fe07a; }
+.toast.unlock { border-color: #c8a22a; border-top-color: #ffd54a; border-left-color: #ffd54a; }
+.toast.warn { border-color: #b3321e; border-top-color: #ff6a4a; border-left-color: #ff6a4a; }
+.toast.warn .t-title { color: #ff8a6a; }
+.toast.night { border-color: #4a4fb0; border-top-color: #8a90ff; border-left-color: #8a90ff; }
+.toast.night .t-title { color: #aab0ff; }
+@keyframes toastIn { to { transform: translateX(0); } }
+@keyframes toastOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(115%); opacity: 0; } }
+
+/* ========================================== */
+/* VILLAGER TRADING                           */
+/* ========================================== */
+.trade-window { width: 420px; max-width: calc(100vw - 32px); }
+.trade-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+.trade-row {
+    background: #b4b4b4;
+    border: 2px solid #8b8b8b;
+    padding: 6px 8px;
+}
+.trade-row.cannot { opacity: 0.6; }
+.trade-main {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.trade-give { display: flex; gap: 4px; min-width: 88px; }
+.trade-arrow { font-size: 20px; color: #555; }
+.trade-slot { cursor: default; }
+.trade-btn {
+    margin-left: auto;
+    padding: 6px 14px;
+    font-size: 13px;
+}
+.trade-have {
+    font-size: 11px;
+    color: #4a4a4a;
+    margin-top: 4px;
+}
+.trade-help {
+    margin-top: 10px;
+    font-size: 11px;
+    line-height: 1.45;
+    color: #4a4a4a;
+}
+
+/* Sleeping in a bed */
+#sleep-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 55;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(8, 8, 20, 0);
+    color: rgba(255, 255, 255, 0);
+    font-family: 'Minecraft', monospace;
+    font-size: 22px;
+    letter-spacing: 1px;
+    pointer-events: none;
+    transition: background 0.7s ease, color 0.7s ease;
+}
+#sleep-overlay.dark {
+    background: rgba(8, 8, 20, 0.92);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Furnace */
+.furnace-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 22px;
+    margin: 4px 0 10px;
+}
+.furnace-left { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.furnace-flame {
+    width: 18px; height: 18px;
+    background: #8b8b8b;
+    position: relative;
+    clip-path: polygon(50% 0, 85% 45%, 75% 100%, 25% 100%, 15% 45%);
+}
+#furnace-flame-fill {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 0%;
+    background: linear-gradient(#ffd34a, #ff7a1a);
+}
+.furnace-arrow {
+    width: 52px; height: 16px;
+    background: #8b8b8b;
+    position: relative;
+    clip-path: polygon(0 30%, 65% 30%, 65% 0, 100% 50%, 65% 100%, 65% 70%, 0 70%);
+}
+#furnace-arrow-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: #ffffff; }
+.furnace-help { font-size: 11px; color: #4a4a4a; max-width: 392px; line-height: 1.45; }
+
+/* Tool wear bar */
+.dura-bar {
+    position: absolute;
+    left: 5px; right: 5px; bottom: 4px;
+    height: 3px;
+    background: #111;
+    pointer-events: none;
+}
+.dura-bar > div { height: 100%; }
+
+/* ========================================== */
+/* TEXTURE HARDENING — crisp pixel-art icons  */
+/* ========================================== */
+
+/* Universal pixelated rendering for every image inside inventory/crafting slots and the hotbar */
+.mc-slot img,
+.hotbar-slot img,
+.craft-output img,
+#cursor-item-preview img,
+.recipe-card img,
+.toast img {
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    -ms-interpolation-mode: nearest-neighbor;
+}
+
+/* Output slot: position context for the text fallback label */
+.mc-slot.craft-output {
+    position: relative;
+    overflow: visible;
+}
+
+/* Text label that appears below the output slot when an item is present */
+#output-item-name-text {
+    position: absolute;
+    bottom: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    font-size: 11px;
+    font-weight: bold;
+    font-family: 'Minecraft', monospace;
+    color: #ffffff;
+    text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+    pointer-events: none;
+    z-index: 5;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+#output-item-name-text.visible {
+    opacity: 1;
+}
+
+/* ========================================== */
+/* MINECRAFT HOVER TOOLTIP                    */
+/* ========================================== */
+#game-tooltip {
+    position: fixed;
+    z-index: 2000;
+    pointer-events: none;
+    display: none;
+    max-width: 280px;
+    padding: 6px 10px;
+    background: rgba(16, 2, 21, 0.94);
+    border: 2px solid #2e0663;
+    border-radius: 2px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7);
+    font-family: 'Minecraft', monospace;
+    color: #ffffff;
+    text-shadow: 1px 1px 0 #000;
+    line-height: 1.4;
+}
+#game-tooltip .mc-tt-name {
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 2px;
+}
+/* Rarity color classes */
+#game-tooltip .mc-tt-name.rarity-common   { color: #ffffff; }
+#game-tooltip .mc-tt-name.rarity-uncommon  { color: #ffff55; }
+#game-tooltip .mc-tt-name.rarity-rare      { color: #55ffff; }
+#game-tooltip .mc-tt-name.rarity-epic      { color: #ff55ff; }
+#game-tooltip .mc-tt-desc {
+    font-size: 11px;
+    color: #a0a0a0;
+    margin-top: 3px;
+    word-wrap: break-word;
+}
+#game-tooltip .mc-tt-durability {
+    font-size: 10px;
+    color: #55ff55;
+    margin-top: 3px;
+}
+#game-tooltip .mc-tt-damage {
+    font-size: 10px;
+    color: #ff5555;
+    margin-top: 1px;
+}
+#game-tooltip .mc-tt-food {
+    font-size: 10px;
+    color: #d69b28;
+    margin-top: 1px;
+}
+#game-tooltip .mc-tt-count {
+    font-size: 10px;
+    color: #888888;
+    margin-top: 3px;
+}
+
+/* ========================================== */
+/* ITEM VISUALS — contrast, tier auras, motion */
+/* ========================================== */
+
+/* Every item sprite gets a hard 2px pixel shadow so it separates from the gray slot.
+   --item-glow is replaced per tier below (a no-op shadow by default). */
+.slot-preview,
+.slot-fallback,
+.recipe-card img,
+.toast img {
+    --item-glow: drop-shadow(0 0 0 transparent);
+    filter: drop-shadow(2px 2px 0 rgba(0, 0, 0, 0.5)) var(--item-glow);
+}
+
+/* Emoji stand-in when a sprite fails to load */
+.slot-fallback {
+    font-size: 22px;
+    line-height: 1;
+    pointer-events: none;
+    user-select: none;
+}
+
+/* The aura sits behind the sprite; the sprite, count and durability bar stack above it */
+.mc-slot[data-tier]::before,
+.hotbar-slot[data-tier]::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+.mc-slot > .slot-preview, .mc-slot > .slot-fallback,
+.hotbar-slot > .slot-preview, .hotbar-slot > .slot-fallback { position: relative; z-index: 1; }
+.mc-slot > .slot-count, .hotbar-slot > .slot-count, .mc-slot > .dura-bar { z-index: 2; }
+
+/* Wood / Stone keep the default gray depth: only a faint inner shade */
+.mc-slot[data-tier="wood"]::before, .hotbar-slot[data-tier="wood"]::before,
+.mc-slot[data-tier="stone"]::before, .hotbar-slot[data-tier="stone"]::before {
+    box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.18);
+}
+
+/* Iron: light metallic blue inner shadow */
+.mc-slot[data-tier="iron"]::before, .hotbar-slot[data-tier="iron"]::before {
+    background: linear-gradient(135deg, rgba(190, 215, 255, 0.22), rgba(110, 140, 190, 0.1));
+    box-shadow: inset 0 0 7px rgba(140, 180, 240, 0.65), inset 0 -2px 0 rgba(90, 120, 175, 0.35);
+}
+[data-tier="iron"] > .slot-preview { --item-glow: drop-shadow(0 0 2px rgba(170, 200, 255, 0.55)); }
+
+/* Gold: soft golden radial glow */
+.mc-slot[data-tier="gold"]::before, .hotbar-slot[data-tier="gold"]::before {
+    background: radial-gradient(circle at 50% 50%, rgba(255, 215, 90, 0.6), rgba(255, 190, 40, 0.16) 60%, transparent 80%);
+}
+[data-tier="gold"] > .slot-preview { --item-glow: drop-shadow(0 0 3px rgba(255, 205, 70, 0.8)); }
+
+/* Diamond: vibrant cyan dust that gently pulses */
+.mc-slot[data-tier="diamond"]::before, .hotbar-slot[data-tier="diamond"]::before {
+    background:
+        radial-gradient(circle at 50% 50%, rgba(80, 245, 255, 0.5), rgba(40, 200, 235, 0.14) 62%, transparent 82%),
+        radial-gradient(circle at 22% 24%, rgba(255, 255, 255, 0.75) 0 1px, transparent 2px),
+        radial-gradient(circle at 78% 70%, rgba(190, 255, 255, 0.8) 0 1px, transparent 2px);
+    box-shadow: inset 0 0 8px rgba(60, 235, 255, 0.6);
+    animation: diamondDust 2.4s ease-in-out infinite;
+}
+[data-tier="diamond"] > .slot-preview { --item-glow: drop-shadow(0 0 3px rgba(70, 240, 255, 0.85)); }
+@keyframes diamondDust { 50% { opacity: 0.65; } }
+
+/* Output slot: chunky stepped bounce + scale when a result appears */
+@keyframes itemSpawn {
+    0%   { transform: translateY(8px) scale(0.3); opacity: 0; }
+    35%  { transform: translateY(-7px) scale(1.35); opacity: 1; }
+    65%  { transform: translateY(2px) scale(0.9); }
+    100% { transform: translateY(0) scale(1); }
+}
+@keyframes itemSpawnFlash {
+    0%   { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.95), inset 0 0 10px rgba(255, 255, 255, 0.8); }
+    100% { box-shadow: 0 0 0 9px rgba(255, 255, 255, 0), inset 0 0 0 rgba(255, 255, 255, 0); }
+}
+.item-spawn {
+    animation: itemSpawn 0.45s steps(6, end) both;
+}
+.mc-slot.spawn-flash { animation: itemSpawnFlash 0.5s ease-out; }
+
+/* Holding / dragging: the item floats above the grid, tilted, with a long offset shadow */
+#cursor-item-preview::before {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0;
+}
+#cursor-item-preview[data-tier="iron"]::before    { background: radial-gradient(circle, rgba(150, 190, 255, 0.45), transparent 70%); opacity: 1; }
+#cursor-item-preview[data-tier="gold"]::before    { background: radial-gradient(circle, rgba(255, 205, 70, 0.55), transparent 70%); opacity: 1; }
+#cursor-item-preview[data-tier="diamond"]::before { background: radial-gradient(circle, rgba(70, 240, 255, 0.55), transparent 70%); opacity: 1; }
+#cursor-item-preview img {
+    filter: drop-shadow(2px 2px 0 rgba(0, 0, 0, 0.5));
+    transition: transform 0.08s steps(3, end), filter 0.08s steps(3, end);
+}
+#cursor-item-preview.holding img {
+    transform: rotate(5deg) scale(1.1);
+    filter: drop-shadow(6px 9px 0 rgba(0, 0, 0, 0.35)) drop-shadow(0 0 4px rgba(255, 255, 255, 0.25));
+    animation: itemLift 0.16s steps(4, end);
+}
+@keyframes itemLift {
+    0%   { transform: rotate(0deg) scale(0.9); filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.5)); }
+    100% { transform: rotate(5deg) scale(1.1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .item-spawn, .mc-slot.spawn-flash, #cursor-item-preview.holding img,
+    .mc-slot[data-tier="diamond"]::before, .hotbar-slot[data-tier="diamond"]::before { animation: none; }
+}
+
+/* ========================================== */
+/* BOW CHARGE, SHIELD & CHEST                 */
+/* ========================================== */
+#bow-charge {
+    position: fixed;
+    left: 50%;
+    bottom: 128px;
+    width: 120px;
+    height: 8px;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.6);
+    border: 2px solid #1c1c1c;
+    pointer-events: none;
+    display: none;
+    z-index: 15;
+}
+#bow-charge > div { height: 100%; width: 0; background: #c9b27a; }
+#bow-charge.full > div { background: #7fe35a; box-shadow: 0 0 6px rgba(127, 227, 90, 0.8); }
+
+#shield-overlay {
+    position: fixed;
+    right: 12%;
+    bottom: -6%;
+    width: 220px;
+    height: 220px;
+    image-rendering: pixelated;
+    pointer-events: none;
+    display: none;
+    z-index: 14;
+    transform: rotate(-8deg);
+    filter: drop-shadow(6px 8px 0 rgba(0, 0, 0, 0.4));
+    transition: transform 0.06s steps(2, end);
+}
+#shield-overlay.hit { transform: rotate(-8deg) translate(-6px, 4px) scale(1.04); }
+
+.chest-storage-section { margin-top: 6px; }
+
+/* ========================================== */
+/* RECIPE BOOK DRAWER, GREEN BOOK BUTTON      */
+/* ========================================== */
+/* The drawer is a flex sibling to the left of the crafting window. It stays in the layout but collapsed (width 0, invisible)
+   so it can animate; `display: none` cannot be transitioned. The `.is-open` class on the window opens it. */
+.mc-modal.has-recipe-book { gap: 0; flex-wrap: nowrap; align-content: normal; }
+.recipe-book {
+    display: flex;
+    box-sizing: border-box;
+    width: 0;
+    min-width: 0;
+    opacity: 0;
+    visibility: hidden;
+    overflow: hidden;
+    padding: 12px 0;
+    border-width: 4px 0;
+    margin-right: 0;
+    pointer-events: none;
+    transition: width 0.28s ease, opacity 0.2s ease, margin-right 0.28s ease, padding 0.28s ease, border-width 0.28s ease, visibility 0s linear 0.28s;
+}
+.recipe-book { align-self: center; height: 440px; max-height: 88vh; }
+.recipe-book > * { min-width: 232px; flex-shrink: 0; }
+.mc-modal.is-open .recipe-book {
+    width: 260px;
+    opacity: 1;
+    visibility: visible;
+    padding: 12px;
+    border-width: 4px;
+    margin-right: 10px;
+    pointer-events: auto;
+    transition: width 0.28s ease, opacity 0.2s ease 0.05s, margin-right 0.28s ease, padding 0.28s ease, border-width 0.28s ease, visibility 0s;
+}
+@media (prefers-reduced-motion: reduce) { .recipe-book, .mc-modal.is-open .recipe-book { transition: none; } }
+@media (max-width: 760px) {
+    .mc-modal.has-recipe-book { flex-wrap: wrap; }
+    .mc-modal.is-open .recipe-book { margin-right: 0; margin-bottom: 10px; }
+}
+
+/* Green knowledge-book button, immediately left of the crafting grid */
+.recipe-book-btn {
+    flex: none;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #8b8b8b;
+    border: 2px solid #ffffff;
+    border-right-color: #373737;
+    border-bottom-color: #373737;
+    cursor: pointer;
+    image-rendering: pixelated;
+}
+.recipe-book-btn:hover { background: #a4a4a4; }
+.recipe-book-btn:focus-visible { outline: 2px solid #3c8c2f; outline-offset: 2px; }
+.recipe-book-btn.active {
+    background: #777777;
+    border: 2px solid #373737;
+    border-right-color: #ffffff;
+    border-bottom-color: #ffffff;
+}
+.recipe-book-btn svg { filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.45)); }
+
+/* Category tabs */
+.recipe-book-tabs { display: flex; gap: 2px; }
+.recipe-tab {
+    flex: 1;
+    padding: 4px 0;
+    font-family: 'Minecraft', monospace;
+    font-size: 10px;
+    color: #3f3f3f;
+    background: #a8a8a8;
+    border: 2px solid #ffffff;
+    border-right-color: #555555;
+    border-bottom-color: #555555;
+    cursor: pointer;
+}
+.recipe-tab:hover { background: #b8b8b8; }
+.recipe-tab.active {
+    background: #c6c6c6;
+    border: 2px solid #555555;
+    border-right-color: #ffffff;
+    border-bottom-color: #ffffff;
+    font-weight: bold;
+}
+
+/* ========================================== */
+/* CHARACTER PREVIEW & EQUIPMENT SLOTS        */
+/* ========================================== */
+.character-host { flex: none; }
+.character-host:empty { display: none; }
+#character-preview-panel {
+    display: grid;
+    align-items: end;
+    column-gap: 4px;
+}
+/* Survival inventory: armor column + player + off-hand */
+#character-preview-panel.state-survival-inventory { grid-template-columns: 40px 129px 40px; }
+#character-preview-panel.state-survival-inventory .armor-slot-column { grid-column: 1; grid-row: 1; }
+#character-preview-panel.state-survival-inventory .player-preview-box { grid-column: 2; grid-row: 1; width: 129px; height: 172px; }
+#character-preview-panel.state-survival-inventory .offhand-slot { grid-column: 3; grid-row: 1; }
+.armor-slot-column { display: flex; flex-direction: column; justify-content: space-between; height: 172px; }
+
+/* Crafting table: the armor column is hidden; the player and the off-hand slot stay (as in Bedrock Edition) */
+#character-preview-panel.state-crafting-table { grid-template-columns: 96px 40px; }
+#character-preview-panel.state-crafting-table .armor-slot-column { display: none; }
+#character-preview-panel.state-crafting-table .player-preview-box { grid-column: 1; grid-row: 1; width: 96px; height: 128px; }
+#character-preview-panel.state-crafting-table .offhand-slot { grid-column: 2; grid-row: 1; }
+
+/* The label beside the grid is redundant next to the window title */
+.crafting-2x2-section > .crafting-label { display: none; }
+
+/* A faint silhouette shows what each empty slot takes */
+.equip-slot.is-empty::before {
+    content: attr(data-ghost);
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    opacity: 0.3;
+    filter: grayscale(1);
+    pointer-events: none;
+}
+
+/* ========================================== */
+/* PIXEL-PERFECT RENDERING & WEATHER OVERLAY  */
+/* ========================================== */
+/* Every image, canvas and SVG keeps hard pixel edges (mob skins use nearest-neighbour filtering on their textures) */
+img, canvas, svg {
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+}
+
+/* White flash across the screen when lightning strikes (opacity is driven from the weather system) */
+#lightning-flash {
+    position: fixed;
+    inset: 0;
+    background: #e8eeff;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 30;
+}
+
+/* ========================================== */
+/* TRADING: levels, and the Wandering Trader   */
+/* ========================================== */
+.trade-level {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #3f3f3f;
+    padding: 2px 2px 4px;
+}
+.trade-level-bar {
+    flex: 1;
+    height: 8px;
+    background: #555;
+    border: 2px solid #373737;
+    border-right-color: #fff;
+    border-bottom-color: #fff;
+}
+.trade-level-bar > div { height: 100%; background: #3fb34a; }
+.trade-locked { font-style: italic; padding: 0 2px; }
+
+/* The Wandering Trader's window: blue robe colours and a drift of sparkles over the top */
+.mc-gui-window.blue-robe {
+    background: #b9c4dc;
+    border-color: #e8eeff;
+    border-right-color: #3a4f86;
+    border-bottom-color: #3a4f86;
+    overflow: hidden;
+}
+.mc-gui-window.blue-robe .gui-header { color: #1d3a82; }
+.mc-gui-window.blue-robe .trade-row { background: #a8b6d6; border-color: #6f84b8; }
+.mc-gui-window.blue-robe::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+        radial-gradient(circle, rgba(255, 255, 255, 0.95) 0 2px, transparent 3px),
+        radial-gradient(circle, rgba(120, 180, 255, 0.9) 0 2px, transparent 3px),
+        radial-gradient(circle, rgba(255, 255, 255, 0.8) 0 1px, transparent 2px);
+    background-size: 90px 90px, 130px 130px, 60px 60px;
+    background-position: 10px 70px, 50px 20px, 30px 40px;
+    animation: traderSparkle 6s linear infinite;
+    opacity: 0.7;
+}
+@keyframes traderSparkle {
+    from { background-position: 10px 70px, 50px 20px, 30px 40px; }
+    to   { background-position: 10px -20px, 50px -110px, 30px -20px; }
+}
+@media (prefers-reduced-motion: reduce) { .mc-gui-window.blue-robe::before { animation: none; } }

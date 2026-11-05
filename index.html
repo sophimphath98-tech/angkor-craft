@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>អង្គរក្រាហ្វ - ជំនាន់ខ្មែរ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;600;700&family=Moul&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=20261105j">
+    <link rel="stylesheet" href="held-tool.css?v=20261105j">
+    <link rel="stylesheet" href="khmer.css?v=20261105j">
+    <!-- Three.js CDN with unpkg fallback -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
+    <script>
+        if (typeof THREE === 'undefined') {
+            document.write('<script src="https://unpkg.com/three@0.128.0/build/three.min.js"><\/script>');
+        }
+    </script>
+</head>
+<body>
+    <div id="error-overlay"></div>
+    <div id="underwater-overlay"></div>
+    <div id="damage-vignette"></div>
+    <div id="crosshair"></div>
+
+    <!-- First-person hand: tools, swords and the bow are CSS-posed sprites pivoting on the gripped handle (held-tool.css / held-tool.js) -->
+    <div id="player-hand-layer" aria-hidden="true">
+        <div id="player-right-hand" class="tool-pickaxe">
+            <div class="held-tool">
+                <div class="held-frame">
+                    <img class="held-sprite" alt="" draggable="false">
+                    <span class="held-glint"></span>
+                    <div class="bow-rig">
+                        <svg class="bow-string" viewBox="0 0 16 16" aria-hidden="true"><polyline points="4.5,1.5 4.5,8 4.5,14.5"></polyline></svg>
+                        <img class="held-arrow" alt="" draggable="false">
+                    </div>
+                </div>
+            </div>
+            <div class="hand-arm"></div>
+        </div>
+    </div>
+    <div id="slash-layer" aria-hidden="true"></div>
+
+    <div id="hud"></div>
+    <div id="notification-box"></div>
+    <div id="death-screen" style="display:none;">
+        <h1>អ្នកបានស្លាប់!</h1>
+        <p id="death-cause"></p>
+        <p id="death-score"></p>
+        <button class="mc-btn mc-btn-large" id="btn-respawn">រស់ឡើងវិញ</button>
+        <button class="mc-btn mc-btn-large mc-btn-secondary" id="btn-death-title">ទំព័រដើម</button>
+    </div>
+    <div id="victory-title"><span>ជ័យជម្នះ</span><small>អ្នកបានផ្ដួលនាគទីបញ្ចប់</small></div>
+
+    <!-- In-Game Chat Overlay -->
+    <div id="chat-container">
+        <div id="chat-messages"></div>
+        <div id="chat-input-wrapper" style="display:none;">
+            <input type="text" id="chat-input" placeholder="ចុច Enter ដើម្បីផ្ញើសារ..." maxlength="100" autocomplete="off">
+        </div>
+    </div>
+
+    <!-- Survival HUD: Armor, Oxygen, Hearts, Hunger, XP -->
+    <div id="survival-hud" style="display: none;">
+        <div class="hud-top-row">
+            <div id="armor-bar" title="ចុច ឬចុច R ដើម្បីប្ដូរគ្រឿងក្រោះ"></div>
+            <div id="oxygen-bar"></div>
+        </div>
+        <div class="hud-main-row">
+            <div id="health-bar"></div>
+            <div id="hunger-bar"></div>
+        </div>
+        <div class="hud-xp-row">
+            <div id="xp-bar-container">
+                <div id="xp-bar-fill"></div>
+            </div>
+            <div id="xp-level">7</div>
+        </div>
+    </div>
+
+    <div id="hotbar-container" style="display: none;"></div>
+
+    <!-- ========================================== -->
+    <!-- ANGKOR CRAFT TITLE SCREEN                -->
+    <!-- ========================================== -->
+    <div id="title-screen">
+        <div class="title-panorama-overlay"></div>
+        <div class="title-content">
+            <div class="logo-wrapper">
+                <div class="khmer-logo" aria-label="អង្គរក្រាហ្វ">
+                    <svg class="khmer-logo-temple" viewBox="0 0 32 16" aria-hidden="true" shape-rendering="crispEdges">
+                        <rect x="14" y="0" width="4" height="2" fill="#f6d77a"/><rect x="13" y="2" width="6" height="2" fill="#e6b84f"/>
+                        <rect x="12" y="4" width="8" height="2" fill="#d9a441"/><rect x="11" y="6" width="10" height="2" fill="#c98f35"/>
+                        <rect x="4" y="5" width="2" height="1" fill="#e6b84f"/><rect x="3" y="6" width="4" height="2" fill="#d9a441"/>
+                        <rect x="26" y="5" width="2" height="1" fill="#e6b84f"/><rect x="25" y="6" width="4" height="2" fill="#d9a441"/>
+                        <rect x="2" y="8" width="28" height="2" fill="#b77a2b"/><rect x="3" y="10" width="26" height="4" fill="#9c6324"/>
+                        <rect x="15" y="10" width="2" height="4" fill="#3b2412"/><rect x="5" y="11" width="1" height="3" fill="#3b2412"/><rect x="26" y="11" width="1" height="3" fill="#3b2412"/>
+                        <rect x="0" y="14" width="32" height="2" fill="#7a4a1c"/>
+                    </svg>
+                    <span class="khmer-logo-text">អង្គរក្រាហ្វ</span>
+                </div>
+                <div class="edition-subtext">ជំនាន់ខ្មែរ · KHMER EDITION</div>
+                <div class="splash-text" id="splash-text">សួស្ដីពីប្រទេសកម្ពុជា!</div>
+            </div>
+
+            <div class="menu-button-stack">
+                <button class="mc-btn mc-btn-large" id="btn-menu-singleplayer">លេងម្នាក់ឯង</button>
+                <button class="mc-btn mc-btn-large" id="btn-menu-multiplayer">លេងច្រើននាក់</button>
+                <button class="mc-btn mc-btn-large" id="btn-menu-host">បើកបន្ទប់លេង</button>
+                <div class="menu-btn-row">
+                    <button class="mc-btn mc-btn-half" id="btn-menu-options">ការកំណត់...</button>
+                    <button class="mc-btn mc-btn-half" id="btn-menu-quit">របៀបលេង</button>
+                </div>
+            </div>
+
+            <div class="title-footer">
+                <span class="footer-left">អង្គរក្រាហ្វ ជំនាន់ខ្មែរ</span>
+                <span class="footer-right">ហ្គេមប្លុកសរសេរដោយ JavaScript សុទ្ធ</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- SINGLEPLAYER WORLD SELECT MODAL           -->
+    <!-- ========================================== -->
+    <div id="modal-singleplayer" class="mc-modal" style="display:none;">
+        <div class="modal-box">
+            <h2 class="modal-title">ជ្រើសរើសពិភព</h2>
+            <div class="world-list" id="singleplayer-world-list">
+                <!-- Dynamically populated -->
+            </div>
+            <div class="modal-btn-row">
+                <button class="mc-btn" id="btn-play-selected-world">លេងពិភពដែលបានជ្រើស</button>
+                <button class="mc-btn" id="btn-open-create-world">បង្កើតពិភពថ្មី</button>
+            </div>
+            <div class="modal-btn-row" style="margin-top: 6px;">
+                <button class="mc-btn" id="btn-delete-world">លុប</button>
+                <button class="mc-btn mc-btn-secondary" id="btn-cancel-singleplayer">បោះបង់</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- CREATE WORLD MODAL                         -->
+    <!-- ========================================== -->
+    <div id="modal-create-world" class="mc-modal" style="display:none;">
+        <div class="modal-box">
+            <h2 class="modal-title">បង្កើតពិភពថ្មី</h2>
+            <div class="form-group">
+                <label>ឈ្មោះពិភព៖</label>
+                <input type="text" id="input-world-name" class="mc-input" value="ពិភពថ្មី" maxlength="28">
+            </div>
+            <div class="form-group">
+                <label>គ្រាប់ពូជ (មិនចាំបាច់)៖</label>
+                <input type="text" id="input-world-seed" class="mc-input" placeholder="ទុកទទេសម្រាប់ពិភពចៃដន្យ" maxlength="24">
+            </div>
+            <div class="form-group">
+                <label>របៀបលេង៖</label>
+                <button class="mc-btn" id="btn-toggle-gamemode">របៀបលេង៖ រស់រានមានជីវិត</button>
+                <small id="gamemode-desc" style="color:#aaa; display:block; margin-top:4px;">ស្វែងរកធនធាន ធ្វើរបស់ ឡើងកម្រិត មានសុខភាព និងភាពឃ្លាន។</small>
+            </div>
+            <div class="modal-btn-row" style="margin-top: 18px;">
+                <button class="mc-btn" id="btn-confirm-create-world">បង្កើតពិភពថ្មី</button>
+                <button class="mc-btn mc-btn-secondary" id="btn-cancel-create-world">បោះបង់</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MULTIPLAYER SERVER LIST & HOSTING MODAL    -->
+    <!-- ========================================== -->
+    <div id="modal-multiplayer" class="mc-modal" style="display:none;">
+        <div class="modal-box">
+            <h2 class="modal-title">លេងច្រើននាក់</h2>
+            <p style="color:#bbb; font-size:12px; margin-bottom:8px;">បើកបន្ទប់ ហើយចែករំលែកលេខកូដ ឬចូលបន្ទប់មិត្តភក្ដិដោយលេខកូដរបស់គេ។ លេងតាមអ៊ីនធឺណិតបាន (WebRTC)។</p>
+            <div class="world-list" id="server-list">
+                <!-- Dynamically populated servers -->
+            </div>
+            <div class="modal-btn-row">
+                <button class="mc-btn" id="btn-play-server">ចូលបន្ទប់</button>
+                <button class="mc-btn" id="btn-open-host-server">បើកបន្ទប់ថ្មី</button>
+            </div>
+            <div class="modal-btn-row" style="margin-top: 6px;">
+                <button class="mc-btn" id="btn-open-direct-join">ភ្ជាប់ផ្ទាល់</button>
+                <button class="mc-btn" id="btn-delete-server">លុប</button>
+                <button class="mc-btn mc-btn-secondary" id="btn-cancel-multiplayer">បោះបង់</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- HOST NEW SERVER MODAL                      -->
+    <!-- ========================================== -->
+    <div id="modal-host-server" class="mc-modal" style="display:none;">
+        <div class="modal-box">
+            <h2 class="modal-title">បើកបន្ទប់ថ្មី</h2>
+            <div class="form-group">
+                <label>ឈ្មោះបន្ទប់៖</label>
+                <input type="text" id="input-server-name" class="mc-input" value="ភូមិរបស់សុខា" maxlength="28">
+            </div>
+            <div class="form-group">
+                <label>ឈ្មោះអ្នកលេងរបស់អ្នក៖</label>
+                <input type="text" id="input-host-player-name" class="mc-input" value="សុខា" maxlength="16">
+            </div>
+            <div class="form-group">
+                <label>លេខកូដបន្ទប់៖</label>
+                <input type="text" id="input-server-code" class="mc-input" value="" maxlength="12">
+                <small style="color:#aaa; display:block; margin-top:4px;">មិត្តភក្ដិចូលដោយលេខកូដនេះ (ឬតំណអញ្ជើញដែលបង្ហាញក្នុងការជជែកពេលអ្នកចូលរួច)។ ទុកផ្ទាំងនេះឱ្យបើក ពេលពួកគេកំពុងលេង។</small>
+                <small id="host-env" style="color:#9fd0ff; display:block; margin-top:6px;"></small>
+                <small id="host-status" style="color:#ff8a8a; display:block; margin-top:6px; min-height:14px;"></small>
+            </div>
+            <div class="modal-btn-row" style="margin-top: 18px;">
+                <button class="mc-btn" id="btn-confirm-host-server">ចាប់ផ្ដើម និងបើកបន្ទប់</button>
+                <button class="mc-btn mc-btn-secondary" id="btn-cancel-host-server">បោះបង់</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- DIRECT JOIN MODAL                          -->
+    <!-- ========================================== -->
+    <div id="modal-direct-join" class="mc-modal" style="display:none;">
+        <div class="modal-box">
+            <h2 class="modal-title">ភ្ជាប់ផ្ទាល់</h2>
+            <div class="form-group">
+                <label>លេខកូដបន្ទប់៖</label>
+                <input type="text" id="input-direct-code" class="mc-input" placeholder="ឧ. K7M3QX" maxlength="12">
+                <small id="join-status" style="color:#ff8a8a; display:block; margin-top:6px; min-height:14px;"></small>
+            </div>
+            <div class="form-group">
+                <label>ឈ្មោះអ្នកលេងរបស់អ្នក៖</label>
+                <input type="text" id="input-player-name" class="mc-input" value="អ្នកលេង" maxlength="16">
+            </div>
+            <div class="modal-btn-row" style="margin-top: 18px;">
+                <button class="mc-btn" id="btn-confirm-direct-join">ចូលបន្ទប់</button>
+                <button class="mc-btn mc-btn-secondary" id="btn-cancel-direct-join">បោះបង់</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- OPTIONS / SETTINGS MODAL                   -->
+    <!-- ========================================== -->
+    <div id="modal-options" class="mc-modal" style="display:none;">
+        <div class="modal-box modal-box-wide">
+            <h2 class="modal-title">ការកំណត់</h2>
+            <div class="options-grid">
+                <div class="option-item">
+                    <label>កម្រិតសំឡេងទូទៅ៖ <span id="label-master-vol">100%</span></label>
+                    <input type="range" id="slider-master-vol" min="0" max="100" value="100" class="mc-slider">
+                </div>
+                <div class="option-item">
+                    <label>តន្ត្រី / បរិយាកាស៖ <span id="label-music-vol">80%</span></label>
+                    <input type="range" id="slider-music-vol" min="0" max="100" value="80" class="mc-slider">
+                </div>
+                <div class="option-item">
+                    <label>សំឡេងបែបផែន៖ <span id="label-sfx-vol">100%</span></label>
+                    <input type="range" id="slider-sfx-vol" min="0" max="100" value="100" class="mc-slider">
+                </div>
+                <div class="option-item">
+                    <label>ចម្ងាយមើល៖ <span id="label-render-dist">4 ជំពូកដី (ធម្មតា)</span></label>
+                    <input type="range" id="slider-render-dist" min="2" max="8" value="4" step="1" class="mc-slider">
+                </div>
+                <div class="option-item">
+                    <label>មុំមើល៖ <span id="label-fov">75°</span></label>
+                    <input type="range" id="slider-fov" min="60" max="95" value="75" class="mc-slider">
+                </div>
+                <div class="option-item">
+                    <label>ភាពរហ័សកណ្ដុរ៖ <span id="label-sens">1.0x</span></label>
+                    <input type="range" id="slider-sens" min="5" max="25" value="10" class="mc-slider">
+                </div>
+            </div>
+            <div class="modal-btn-row" style="margin-top: 20px;">
+                <button class="mc-btn" id="btn-options-done">រួចរាល់</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- ANGKOR CRAFT LOADING SCREEN              -->
+    <!-- ========================================== -->
+    <div id="loading-screen" style="display:none;">
+        <div class="loading-backdrop" style="background-image: url('poster.jpg');"></div>
+        <div class="loading-overlay">
+            <div class="loading-card">
+                <h2 class="loading-title">កំពុងផ្ទុកពិភព...</h2>
+                <div class="loading-bar-border">
+                    <div class="loading-bar-fill" id="loading-bar-fill"></div>
+                </div>
+                <div class="loading-status-row">
+                    <span id="loading-status-text">កំពុងសង់ដី...</span>
+                    <span id="loading-status-pct">0%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- PLAYER INVENTORY & 2x2 CRAFTING MODAL (E)  -->
+    <!-- ========================================== -->
+    <div id="modal-inventory" class="mc-modal" style="display:none;">
+        <div class="mc-gui-window">
+            <div class="gui-header">
+                <span>ឃ្លាំងផ្ទុក</span>
+                <span class="gui-close-btn" id="btn-close-inventory">✕</span>
+            </div>
+            <div class="inventory-crafting-top">
+                <div id="character-host-inventory" class="character-host">
+                    <!-- Shared with the crafting table: moves between windows and switches its state class -->
+                    <div id="character-preview-panel" class="state-survival-inventory">
+                        <div class="armor-slot-column" id="armor-slot-column">
+                            <div class="mc-slot equip-slot is-empty" data-area="armor" data-equip="head" data-ghost="⛑️" title="ក្បាល"></div>
+                            <div class="mc-slot equip-slot is-empty" data-area="armor" data-equip="chest" data-ghost="🦺" title="ទ្រូង"></div>
+                            <div class="mc-slot equip-slot is-empty" data-area="armor" data-equip="legs" data-ghost="👖" title="ជើង"></div>
+                            <div class="mc-slot equip-slot is-empty" data-area="armor" data-equip="shoes" data-ghost="🥾" title="ស្បែកជើង"></div>
+                        </div>
+                        <div class="player-preview-box">
+                            <canvas id="player-preview-canvas" width="180" height="240"></canvas>
+                        </div>
+                        <div class="mc-slot equip-slot offhand-slot is-empty" data-area="offhand" data-equip="offhand" data-ghost="🛡️" title="ដៃឆ្វេង (ខែល)"></div>
+                    </div>
+                </div>
+                <div class="crafting-2x2-section">
+                    <span class="crafting-label">ក្រឡាបង្កើតរបស់ (2x2)</span>
+                    <div class="crafting-grid-2x2">
+                        <div class="mc-slot craft-input" data-slot="0"></div>
+                        <div class="mc-slot craft-input" data-slot="1"></div>
+                        <div class="mc-slot craft-input" data-slot="2"></div>
+                        <div class="mc-slot craft-input" data-slot="3"></div>
+                    </div>
+                    <div class="crafting-arrow">➔</div>
+                    <div class="mc-slot craft-output" id="craft-output-2x2"></div>
+                </div>
+            </div>
+            <div class="inventory-storage-section">
+                <span class="storage-label">ឃ្លាំងផ្ទុក</span>
+                <div class="inventory-grid-27" id="main-inventory-grid"></div>
+            </div>
+            <div class="inventory-hotbar-section">
+                <div class="inventory-grid-9" id="inv-hotbar-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 3x3 CRAFTING TABLE MODAL                   -->
+    <!-- ========================================== -->
+    <div id="modal-crafting-table" class="mc-modal" style="display:none;">
+        <div class="mc-gui-window">
+            <div class="gui-header">
+                <span>តុច្នៃប្រឌិត (3x3)</span>
+                <span class="gui-close-btn" id="btn-close-crafting-table">✕</span>
+            </div>
+            <div class="inventory-crafting-top">
+            <div id="character-host-table" class="character-host"></div>
+            <div class="crafting-3x3-section">
+                <div class="crafting-grid-3x3">
+                    <div class="mc-slot craft3-input" data-slot="0"></div>
+                    <div class="mc-slot craft3-input" data-slot="1"></div>
+                    <div class="mc-slot craft3-input" data-slot="2"></div>
+                    <div class="mc-slot craft3-input" data-slot="3"></div>
+                    <div class="mc-slot craft3-input" data-slot="4"></div>
+                    <div class="mc-slot craft3-input" data-slot="5"></div>
+                    <div class="mc-slot craft3-input" data-slot="6"></div>
+                    <div class="mc-slot craft3-input" data-slot="7"></div>
+                    <div class="mc-slot craft3-input" data-slot="8"></div>
+                </div>
+                <div class="crafting-arrow">➔</div>
+                <div class="mc-slot craft-output" id="craft-output-3x3"></div>
+            </div>
+            </div>
+            <div class="inventory-storage-section">
+                <span class="storage-label">ឃ្លាំងផ្ទុក</span>
+                <div class="inventory-grid-27" id="table-main-inventory-grid"></div>
+            </div>
+            <div class="inventory-hotbar-section">
+                <div class="inventory-grid-9" id="table-hotbar-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- FURNACE MODAL                              -->
+    <!-- ========================================== -->
+    <div id="modal-furnace" class="mc-modal" style="display:none;">
+        <div class="mc-gui-window">
+            <div class="gui-header">
+                <span>ឡដុត</span>
+                <span class="gui-close-btn" id="btn-close-furnace">✕</span>
+            </div>
+            <div class="furnace-section">
+                <div class="furnace-left">
+                    <div class="mc-slot" id="furnace-in" title="ដាក់ដុត"></div>
+                    <div class="furnace-flame"><div id="furnace-flame-fill"></div></div>
+                    <div class="mc-slot" id="furnace-fuel" title="ឥន្ធនៈ"></div>
+                </div>
+                <div class="furnace-arrow"><div id="furnace-arrow-fill"></div></div>
+                <div class="mc-slot craft-output" id="furnace-out"></div>
+            </div>
+            <div class="furnace-help">លើ៖ អ្វីដែលត្រូវដុត (រ៉ែដែក រ៉ែសំរឹទ្ធ រ៉ែមាស ផ្លែត្នោត ខ្សាច់ ថ្មភ្នំ ដីក្រហម សាច់ឆៅ ដើមឈើ)។ ក្រោម៖ ឥន្ធនៈ (ធ្យូង ដើមឈើ ក្ដារ ដំបង)។ Shift-ចុចរបស់ ដើម្បីបញ្ជូនទៅប្រអប់ត្រឹមត្រូវ។</div>
+            <div class="inventory-storage-section">
+                <span class="storage-label">ឃ្លាំងផ្ទុក</span>
+                <div class="inventory-grid-27" id="furnace-main-inventory-grid"></div>
+            </div>
+            <div class="inventory-hotbar-section">
+                <div class="inventory-grid-9" id="furnace-hotbar-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- CHEST STORAGE MODAL                        -->
+    <!-- ========================================== -->
+    <div id="modal-chest" class="mc-modal" style="display:none;">
+        <div class="mc-gui-window">
+            <div class="gui-header">
+                <span>ហិប</span>
+                <span class="gui-close-btn" id="btn-close-chest">✕</span>
+            </div>
+            <div class="chest-storage-section">
+                <span class="storage-label">ហិប (27 ប្រអប់)</span>
+                <div class="inventory-grid-27" id="chest-storage-grid"></div>
+            </div>
+            <div class="inventory-storage-section" style="margin-top: 12px;">
+                <span class="storage-label">ឃ្លាំងផ្ទុក</span>
+                <div class="inventory-grid-27" id="chest-main-inventory-grid"></div>
+            </div>
+            <div class="inventory-hotbar-section">
+                <div class="inventory-grid-9" id="chest-hotbar-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- VILLAGER TRADING MODAL                     -->
+    <!-- ========================================== -->
+    <div id="modal-trade" class="mc-modal" style="display:none;">
+        <div class="mc-gui-window trade-window">
+            <div class="gui-header">
+                <span id="trade-title">អ្នកភូមិ</span>
+                <span class="gui-close-btn" id="btn-close-trade">✕</span>
+            </div>
+            <div id="trade-list" class="trade-list"></div>
+            <div class="trade-help">ត្បូងមរកតបានពីរ៉ែត្បូងមរកត (ចបជីកថ្ម ជ្រៅក្រោមដី) ឬពីការលក់ឱ្យអ្នកភូមិ។ Shift-ចុច ដូរ ដើម្បីដូរឱ្យបានច្រើនដងបំផុត។</div>
+        </div>
+    </div>
+
+    <!-- Sleeping: the screen fades to black, then morning -->
+    <div id="sleep-overlay" style="display:none;"><span>កំពុងដេក...</span></div>
+
+    <!-- Pause / Instructions Overlay -->
+    <div id="overlay" style="display:none;">
+        <div class="menu-card">
+            <h1>ផ្អាកហ្គេម</h1>
+            <p style="color: #aaa; margin: 0 0 16px 0; font-size: 14px;">ចុច "ត្រឡប់ទៅលេង" ដើម្បីបន្តលេង</p>
+            <div class="btn-play">ត្រឡប់ទៅលេង</div>
+            <div class="controls-grid">
+                <span class="key-badge">WASD</span><span>ដើរ</span>
+                <span class="key-badge">SPACE</span><span>លោត / ហែលឡើង</span>
+                <span class="key-badge">SHIFT</span><span>រត់លឿន</span>
+                <span class="key-badge">MOUSE</span><span>មើលជុំវិញ</span>
+                <span class="key-badge">ចុចឆ្វេង</span><span>ជីកប្លុក (សង្កត់) / វាយសត្វ</span>
+                <span class="key-badge">ចុចស្ដាំ</span><span>ដាក់ប្លុក / ញ៉ាំ / បើកតុច្នៃប្រឌិត / ប្រើភ្នែកទីបញ្ចប់</span>
+                <span class="key-badge">E</span><span>បើកឃ្លាំងផ្ទុក និងធ្វើរបស់ 2x2</span>
+                <span class="key-badge">Q</span><span>ទម្លាក់របស់ (Ctrl+Q៖ ទាំងគំនរ)</span>
+                <span class="key-badge">R</span><span>ប្ដូរគ្រឿងក្រោះ (របៀបច្នៃប្រឌិត)</span>
+                <span class="key-badge">T / ENTER</span><span>បើកការជជែកពេលលេងច្រើននាក់</span>
+                <span class="key-badge">1 - 9 / រំកិល</span><span>ជ្រើសប្រអប់របារ</span>
+                <span class="key-badge">F5 / V</span><span>កាមេរ៉ា៖ មើលពីភ្នែក / មើលពីក្រោយ</span>
+                <span class="key-badge">F3</span><span>បង្ហាញកូអរដោនេ ទិស ម៉ោង និងព័ត៌មាន</span>
+                <span class="key-badge">T រួច /</span><span>ពាក្យបញ្ជា៖ /camera, /locate temple, /give, /tp end, /time set day</span>
+            </div>
+            <div style="margin-top: 14px;">
+                <button class="mc-btn mc-btn-secondary" id="btn-back-to-title">រក្សាទុក និងចេញទៅទំព័រដើម</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Item hover tooltip -->
+    <div id="game-tooltip">
+        <div class="mc-tt-name"></div>
+        <div class="mc-tt-desc"></div>
+        <div class="mc-tt-durability"></div>
+        <div class="mc-tt-damage"></div>
+        <div class="mc-tt-food"></div>
+        <div class="mc-tt-count"></div>
+    </div>
+
+    <!-- Floating Cursor Item for Inventory Dragging -->
+    <div id="cursor-item-preview"><img id="cursor-img" src="" alt=""><span id="cursor-count" class="cursor-count"></span></div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Main Game Logic -->
+    <script src="held-tool.js?v=20261105j"></script>
+    <script src="game.js?v=20261105j"></script>
+</body>
+</html>
