@@ -577,4 +577,4 @@ CONCEPTS.ELEPHANT = paint(44, 34, (g) => {
 }, { hide: pal('4e4e56', '66666e', '808088', '9a9aa2'), ear: pal('5a5a62', '74747c', '8e8e96'), tusk: [hex('f4eedc')], eye: [hex('111111')],
      howdah: pal('5a1a10', '8a2a1a', 'b04028'), gold: pal('8a5a08', 'c8901a', 'f2c64a'), cloth: pal('8a1a1a', 'b02828', 'd04040') });
 
-module.exports = { ITEMS, BLOCKS: Object.fromEntries(Object.entries(BLOCKS).map(([k, v]) => [k, Array.isArray(v) ? asTile(v) : v])), FACES, CONCEPTS };
+module.exports = { paint, P, ITEMS, BLOCKS: Object.fromEntries(Object.entries(BLOCKS).map(([k, v]) => [k, Array.isArray(v) ? asTile(v) : v])), FACES, CONCEPTS };
