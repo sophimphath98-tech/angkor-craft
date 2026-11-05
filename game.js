@@ -10536,16 +10536,14 @@ const BLOCK = {
                         m.material = curSlot.type === BLOCK.TORCH ? this.heldGlowMat : this.heldSpriteMat;
                         if (curSlot.type === BLOCK.BOW) {
                             // posed every frame below (it moves as you draw)
-                        } else if (TOOLS[curSlot.type] && ['pickaxe', 'axe', 'shovel', 'hoe', 'sword', 'rod', 'crossbow'].includes(TOOLS[curSlot.type].kind)) {
-                            // turned around so we see the back of the picture (its mirror image): handle bottom right,
-                            // head up toward the crosshair. (A negative scale would mirror it too but break its lighting.)
-                            m.position.set(0.25, -0.19, -0.55);
-                            m.rotation.set(0.1, Math.PI - 0.75, -0.15, 'YXZ');
-                            m.scale.set(0.4, 0.4, 0.4);
                         } else {
-                            m.position.set(0.3, -0.21, -0.56);
-                            m.rotation.set(0.12, Math.PI - 0.5, -0.05, 'YXZ');
-                            m.scale.set(0.32, 0.32, 0.32);
+                            // Minecraft's first-person item transform (item/handheld and item/generated: rotation [0, -90, 25]):
+                            // the picture is turned side-on, so you see its front at an angle on the right of the view. The head
+                            // of a tool stands up, and whatever is on the picture's left (an axe's blade, a pick's point)
+                            // points forward into the world, at what you are hitting.
+                            m.position.set(0.5, -0.3, -0.62);
+                            m.rotation.set(0, -Math.PI / 2, 25 * Math.PI / 180, 'XYZ');
+                            m.scale.set(0.55, 0.55, 0.55);
                         }
                     } else {
                         const uvAttr = this.heldBlockMesh.geometry.attributes.uv;
