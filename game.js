@@ -189,6 +189,143 @@ const BLOCK = {
     GOLDEN_KHAN: 214          // the old golden royal sword
 };
 
+    // ==========================================
+    // KHMER CONTENT v2: blocks and items added after the comparison with Minecraft (Khmer versions).
+    // One record per block or item; the tables below (names, hardness, drops, food, fuel, recipes...) are filled from it
+    // by applyKhTables(), so a new thing is described in one place. Ids start at 300 (chunks store 16-bit ids).
+    //   kind     'block' (placed as itself), 'item' (never placed), 'state' (a placed state of another item)
+    //   tile     texture name, or { top, side, bottom } per face
+    //   icon     flat inventory / hand picture (blocks drawn as a 3D shape use it instead of a cube)
+    //   boxes    (world, x, y, z, b, forCollision) -> block-local boxes, for partial shapes
+    // ==========================================
+    const KH = {};              // key -> record
+    const KH_BY_ID = {};        // id -> record
+    (function defineKhContent() {
+        let next = 300;
+        const add = (key, def) => { def.key = key; def.id = next++; BLOCK[key] = def.id; KH[key] = def; KH_BY_ID[def.id] = def; return def; };
+        const block = (key, def) => add(key, Object.assign({ kind: 'block', hardness: 1.5, rarity: 'Common' }, def));
+        const item = (key, def) => add(key, Object.assign({ kind: 'item', rarity: 'Common' }, def));
+        const state = (key, def) => add(key, Object.assign({ kind: 'state', hardness: 1 }, def));
+
+        // ---- building blocks ----
+        block('BRICKS', { name: 'ឥដ្ឋដុត', tile: 'BRICKS', hardness: 2.0, tier: 1, info: 'ឥដ្ឋក្រហមដូចប្រាសាទព្រះគោ។ ដុតដីឥដ្ឋក្នុងឡ។' });
+        block('CLAY', { name: 'ដីឥដ្ឋ', tile: 'CLAY', hardness: 0.6, tool: 'shovel', smeltTo: 'BRICKS', info: 'ដីឥដ្ឋពីបាតទន្លេ។ ដុតបានឥដ្ឋ។' });
+        block('MOSSY_COBBLESTONE', { name: 'ថ្មភ្នំមានស្លែ', tile: 'MOSSY_COBBLESTONE', hardness: 1.8, tier: 1, info: 'ថ្មចាស់ពេញដោយស្លែ ដូចប្រាសាទក្នុងព្រៃ។' });
+        block('RICE_STRAW', { name: 'គំនរចំបើង', tile: { top: 'RICE_STRAW_TOP', side: 'RICE_STRAW_SIDE', bottom: 'RICE_STRAW_TOP' }, hardness: 0.5, fuel: 10, info: 'ចំបើងស្រូវចងជាដុំ។ ក្របី និងសេះចូលចិត្តស៊ី។' });
+        block('PUMPKIN', { name: 'ល្ពៅ', tile: 'PUMPKIN_SIDE', hardness: 1.0, tool: 'axe', info: 'ល្ពៅពីចម្ការ។ ធ្វើនំសង់ខ្យាល្ពៅ។' });
+        block('WATERMELON', { name: 'ឪឡឹក', tile: 'WATERMELON_SIDE', hardness: 1.0, tool: 'axe', drop: 'WATERMELON_SLICE', dropCount: [3, 7], info: 'ផ្លែឪឡឹកធំ។ បំបែកបានឪឡឹកមួយចំណិត ៣-៧។' });
+        block('PALM_LEAF_SHELF', { name: 'ធ្នើសាស្ត្រា', tile: { top: 'WOOD_PLANKS', side: 'PALM_LEAF_SHELF', bottom: 'WOOD_PLANKS' }, hardness: 1.5, tool: 'axe', fuel: 7.5, info: 'ធ្នើដាក់សាស្ត្រាស្លឹករឹត។ ដាក់ជុំវិញតុយ័ន្ត។' });
+        block('YANTRA_TABLE', { name: 'តុយ័ន្ត', tile: { top: 'YANTRA_TABLE_TOP', side: 'YANTRA_TABLE_SIDE', bottom: 'YANTRA_TABLE_SIDE' }, hardness: 5.0, tier: 1, rarity: 'Rare', interactive: true,
+            info: 'ចុចស្ដាំ៖ ចំណាយ ៣ កម្រិត ដើម្បីទទួលយ័ន្តការពារ ៥ នាទី (ការពារ +៣០% វាយ +២)។' });
+        for (const [k, nm, mat] of [['GOLD_BLOCK', 'ដុំមាស', 'GOLD_INGOT'], ['IRON_BLOCK', 'ដុំដែក', 'IRON_INGOT'], ['BRONZE_BLOCK', 'ដុំសំរឹទ្ធ', 'BRONZE_INGOT'],
+            ['DIAMOND_BLOCK', 'ដុំពេជ្រ', 'DIAMOND'], ['SAPPHIRE_BLOCK', 'ដុំត្បូងកណ្តៀង', 'SAPPHIRE']]) {
+            block(k, { name: nm, tile: k, hardness: 3.0, tier: 2, storageOf: mat, rarity: k === 'GOLD_BLOCK' || k === 'IRON_BLOCK' || k === 'BRONZE_BLOCK' ? 'Uncommon' : 'Rare', info: 'ផ្ទុក ៩ ដុំក្នុងប្លុកមួយ។ ដាក់តុបតែងបាន។' });
+        }
+        block('FIRECRACKER_KEG', { name: 'ធុងកាំជ្រួច', tile: { top: 'FIRECRACKER_TOP', side: 'FIRECRACKER_SIDE', bottom: 'FIRECRACKER_TOP' }, hardness: 0.1, interactive: true,
+            info: 'ចុចស្ដាំដោយដែកកេះភ្លើង៖ ផ្ទុះក្រោយ ៣ វិនាទី (កាំ ៤ ប្លុក)។' });
+        // ---- Patala, the naga underworld ----
+        block('PATALA_STONE', { name: 'ថ្មបាតាល', tile: 'PATALA_STONE', hardness: 0.8, tier: 1, info: 'ថ្មក្រហមងងឹតនៃឋានបាតាល។' });
+        block('ASH_SAND', { name: 'ខ្សាច់ផេះ', tile: 'ASH_SAND', hardness: 0.6, tool: 'shovel', slow: true, info: 'ខ្សាច់ផេះនៃឋានបាតាល ដើរយឺត។' });
+        block('NAGA_GEM_LAMP', { name: 'ចង្កៀងកែវនាគ', tile: 'NAGA_GEM_LAMP', hardness: 0.4, light: 15, lightColor: 2, rarity: 'Uncommon', info: 'កែវនាគភ្លឺរលោង ពន្លឺ ១៥។' });
+        block('NAGA_GATE_X', { name: 'ទ្វារបាតាល', tile: 'NAGA_GATE', hardness: Infinity, portal: 'x', noItem: true, light: 11, lightColor: 2, info: 'ទ្វារទៅឋានបាតាល។' });
+        block('NAGA_GATE_Z', { name: 'ទ្វារបាតាល', tile: 'NAGA_GATE', hardness: Infinity, portal: 'z', noItem: true, light: 11, lightColor: 2 });
+
+        // ---- shaped blocks: ladder, gate, wall, trapdoor ----
+        const ladder = item('LADDER', { name: 'ជណ្ដើរឫស្សី', icon: 'LADDER', placeable: true, fuel: 7.5, info: 'ពាក់លើជញ្ជាំង រួចឡើងចុះ (W ឡើង, Shift នៅស្ងៀម)។' });
+        ['N', 'E', 'S', 'W'].forEach((f, i) => state('LADDER_' + f, { name: ladder.name, tile: 'LADDER', hardness: 0.4, tool: 'axe', drop: 'LADDER', facing: i, ladder: true, nonSolid: true }));
+        const gate = item('FENCE_GATE', { name: 'ទ្វាររបង', icon: 'FENCE_GATE', placeable: true, fuel: 7.5, info: 'ទ្វាររបងឈើ។ ចុចស្ដាំដើម្បីបើក ឬបិទ។' });
+        [['X', 0], ['Z', 1]].forEach(([ax, a]) => [false, true].forEach(open => state('GATE_' + ax + (open ? '_OPEN' : ''), {
+            name: gate.name, tile: 'WOOD_PLANKS', hardness: 1.1, tool: 'axe', drop: 'FENCE_GATE', gateAxis: a, open, interactive: true, nonSolid: open
+        })));
+        block('LATERITE_WALL', { name: 'ជញ្ជាំងថ្មបាយក្រៀម', tile: 'LATERITE', icon: 'LATERITE_WALL', hardness: 1.8, tier: 1, wall: true, info: 'ជញ្ជាំងទាប ខ្ពស់ ១.៥ ប្លុក (លោតមិនរួច)។' });
+        const trap = item('TRAPDOOR', { name: 'ទ្វារផ្ដេក', icon: 'TRAPDOOR', placeable: true, fuel: 7.5, info: 'ទ្វារលើកម្រាលដូចផ្ទះខ្មែរ។ ចុចស្ដាំដើម្បីបើក។' });
+        state('TRAPDOOR_CLOSED', { name: trap.name, tile: 'TRAPDOOR', hardness: 1.1, tool: 'axe', drop: 'TRAPDOOR', trapdoor: true, open: false, interactive: true });
+        ['N', 'E', 'S', 'W'].forEach((f, i) => state('TRAPDOOR_OPEN_' + f, { name: trap.name, tile: 'TRAPDOOR', hardness: 1.1, tool: 'axe', drop: 'TRAPDOOR', trapdoor: true, open: true, facing: i, interactive: true }));
+
+        // ---- stairs in two new materials (states are made by the stair code from STAIR_DEFS) ----
+        item('SANDSTONE_STAIRS', { name: 'ជណ្ដើរថ្មភក់', icon: 'SANDSTONE_STAIRS', stairs: true, info: 'ជណ្ដើរថ្មភក់ដូចប្រាសាទអង្គរ។' });
+        next += 8;
+        item('STONE_STAIRS', { name: 'ជណ្ដើរថ្ម', icon: 'STONE_STAIRS', stairs: true, info: 'ជណ្ដើរថ្ម ត្រូវការចបជីក។' });
+        next += 8;
+
+        // ---- furniture and stations (small 3D shapes) ----
+        block('CAMPFIRE', { name: 'ជើងក្រានភ្លើង', tile: 'CAMPFIRE_LOG', icon: 'CAMPFIRE', hardness: 1.0, tool: 'axe', light: 15, lightColor: 0, interactive: true, flame: true,
+            boxes: () => [[1 / 16, 0, 5 / 16, 15 / 16, 4 / 16, 11 / 16], [5 / 16, 0, 1 / 16, 11 / 16, 4 / 16, 15 / 16]], drop: 'COAL', dropCount: [1, 2],
+            info: 'ពន្លឺ ១៥។ ចុចស្ដាំដោយសាច់ ឬត្រីឆៅ ដើម្បីអាំងភ្លាម។' });
+        block('WATER_JAR', { name: 'ពាងទឹក', tile: { top: 'JAR_TOP', side: 'JAR_SIDE', bottom: 'JAR_SIDE' }, icon: 'WATER_JAR', hardness: 1.5, tier: 1, interactive: true,
+            boxes: () => [[2 / 16, 0, 2 / 16, 14 / 16, 13 / 16, 14 / 16], [4 / 16, 13 / 16, 4 / 16, 12 / 16, 15 / 16, 12 / 16]],
+            info: 'ពាងទឹកភ្លៀងនៅមុខផ្ទះ។ ចុចស្ដាំដោយធុងទទេ ដើម្បីដងទឹក។' });
+        block('HERBAL_POT', { name: 'ឆ្នាំងស្លថ្នាំ', tile: 'POT_SIDE', icon: 'HERBAL_POT', hardness: 1.5, tier: 1, interactive: true,
+            boxes: () => [[3 / 16, 3 / 16, 3 / 16, 13 / 16, 12 / 16, 13 / 16], [2 / 16, 0, 2 / 16, 5 / 16, 3 / 16, 5 / 16], [11 / 16, 0, 11 / 16, 14 / 16, 3 / 16, 14 / 16], [11 / 16, 0, 2 / 16, 14 / 16, 3 / 16, 5 / 16]],
+            info: 'ចុចស្ដាំដោយដប និងមានស្ករ ១ ដើម្បីស្លថ្នាំបុរាណ។' });
+        block('ANVIL', { name: 'ទ្រនាប់ដែក', tile: 'ANVIL_SIDE', icon: 'ANVIL', hardness: 5.0, tier: 1, interactive: true,
+            boxes: () => [[2 / 16, 0, 2 / 16, 14 / 16, 4 / 16, 14 / 16], [5 / 16, 4 / 16, 5 / 16, 11 / 16, 10 / 16, 11 / 16], [0, 10 / 16, 3 / 16, 1, 1, 13 / 16]],
+            info: 'ចុចស្ដាំកាន់ឧបករណ៍ខូច៖ ជួសជុលពេញ ចំណាយ ១ កម្រិត។' });
+        block('SIGN', { name: 'ស្លាកឈើ', tile: 'SIGN_FACE', icon: 'SIGN', hardness: 1.0, tool: 'axe', fuel: 5, nonSolid: true,
+            boxes: () => [[7 / 16, 0, 7 / 16, 9 / 16, 8 / 16, 9 / 16], [0, 8 / 16, 7 / 16, 1, 1, 9 / 16]], info: 'ស្លាកឈើសម្រាប់តុបតែង និងចង្អុលផ្លូវ។' });
+        block('OX_CART', { name: 'រទេះគោ', tile: 'CART_SIDE', icon: 'OX_CART', hardness: 2.0, tool: 'axe', interactive: true, storage: true,
+            boxes: () => [[1 / 16, 4 / 16, 1 / 16, 15 / 16, 12 / 16, 15 / 16], [0, 0, 3 / 16, 2 / 16, 6 / 16, 9 / 16], [14 / 16, 0, 3 / 16, 1, 6 / 16, 9 / 16]],
+            info: 'រទេះផ្ទុករបស់ ២៧ ប្រអប់។ ចុចស្ដាំដើម្បីបើក។' });
+        block('BAMBOO', { name: 'ឫស្សី', tile: 'BAMBOO_PLANT', icon: 'BAMBOO', hardness: 0.3, tool: 'axe', flora: true, fuel: 2.5,
+            info: 'ដុះលឿនជិតទឹក (ខ្ពស់ ៤)។ ធ្វើក្រដាស ដងសន្ទូច ជណ្ដើរ។' });
+
+        // ---- items ----
+        item('FLINT', { name: 'ថ្មដែកកេះ', icon: 'FLINT', info: 'បានពីការជីកក្រួស (១០%)។' });
+        item('FLINT_AND_STEEL', { name: 'ដែកកេះភ្លើង', icon: 'FLINT_AND_STEEL', tool: { kind: 'flint', tier: 0, speed: 1, damage: 1, uses: 64 }, info: 'បង្កាត់ធុងកាំជ្រួច ឬបើកទ្វារបាតាល (ស៊ុមថ្មកញ្ចក់ខ្មៅ)។' });
+        item('SHEARS', { name: 'កន្ត្រៃ', icon: 'SHEARS', tool: { kind: 'shears', tier: 0, speed: 4, damage: 1, uses: 238 }, info: 'កាត់រោមចៀម (១-៣)។ កាត់ស្លឹកឈើទទួលបានប្លុកស្លឹក។' });
+        item('FISHING_ROD', { name: 'ដងសន្ទូច', icon: 'FISHING_ROD', tool: { kind: 'rod', tier: 0, speed: 1, damage: 1, uses: 64 }, info: 'ចុចស្ដាំលើទឹកដើម្បីបោះ រង់ចាំត្រីស៊ី រួចចុចម្ដងទៀត។' });
+        item('RAW_FISH', { name: 'ត្រីរ៉ស់ស្រស់', icon: 'RAW_FISH', food: { hunger: 2, hp: 0 }, smeltTo: 'GRILLED_FISH', info: 'ត្រីស្រស់ពីទន្លេ។ អាំងឱ្យឆ្អិនមុនញ៉ាំ។' });
+        item('GRILLED_FISH', { name: 'ត្រីអាំង', icon: 'GRILLED_FISH', food: { hunger: 6, hp: 3 }, info: 'ត្រីអាំងក្លិនឈ្ងុយ ឆ្អែតល្អ។' });
+        item('COMPASS', { name: 'ត្រីវិស័យ', icon: 'COMPASS', stack: 1, info: 'កាន់ក្នុងដៃ៖ ចង្អុលទៅចំណុចរស់ឡើងវិញ (គ្រែ)។' });
+        item('CLOCK', { name: 'នាឡិកា', icon: 'CLOCK', stack: 1, info: 'កាន់ក្នុងដៃ៖ បង្ហាញម៉ោង និងថ្ងៃ/យប់ សូម្បីក្នុងរូងភ្នំ។' });
+        item('MAP', { name: 'ផែនទី', icon: 'MAP', stack: 1, info: 'កាន់ក្នុងដៃ៖ ផែនទីតំបន់ជុំវិញ ៦៤×៦៤ ប្លុក។' });
+        item('PAPER', { name: 'ក្រដាស', icon: 'PAPER', info: 'ធ្វើពីឫស្សី។ សម្រាប់សាស្ត្រា ផែនទី និងកាំជ្រួច។' });
+        item('PALM_LEAF_BOOK', { name: 'សាស្ត្រាស្លឹករឹត', icon: 'PALM_LEAF_BOOK', rarity: 'Uncommon', info: 'សៀវភៅស្លឹករឹតបុរាណ។ សម្រាប់ធ្នើ និងតុយ័ន្ត។' });
+        item('SUGAR', { name: 'ស្ករ', icon: 'SUGAR', info: 'ស្ករពីស្ករត្នោត។ សម្រាប់នំ និងថ្នាំ។' });
+        item('EGG', { name: 'ពងមាន់', icon: 'EGG', stack: 16, info: 'មាន់ពងរៀងរាល់ ៥-១០ នាទី។ សម្រាប់ធ្វើនំ។' });
+        item('FEATHER', { name: 'រោមមាន់', icon: 'FEATHER', info: 'ពីមាន់។ សម្រាប់ព្រួញ។' });
+        item('GUNPOWDER', { name: 'ម្សៅរំសេវ', icon: 'GUNPOWDER', info: 'ពីវិញ្ញាណថ្មបាយក្រៀម។ សម្រាប់កាំជ្រួច។' });
+        item('MILK_BUCKET', { name: 'ធុងទឹកដោះគោ', icon: 'MILK_BUCKET', stack: 1, food: { hunger: 2, hp: 2, milk: true, always: true }, info: 'រឹតពីគោ ឬក្របី។ ផឹកដើម្បីលុបឥទ្ធិពលទាំងអស់។' });
+        item('LAVA_BUCKET', { name: 'ធុងកម្អែ', icon: 'LAVA_BUCKET', stack: 1, info: 'ដងពីកម្អែភ្នំភ្លើង។ ចាក់ចេញដើម្បីដាក់កម្អែ។' });
+        item('MANGO', { name: 'ស្វាយ', icon: 'MANGO', food: { hunger: 4, hp: 2 }, info: 'ផ្លែស្វាយទុំ ជ្រុះពីស្លឹកឈើអុក។' });
+        item('GOLDEN_MANGO', { name: 'ស្វាយមាស', icon: 'GOLDEN_MANGO', rarity: 'Rare', food: { hunger: 4, hp: 10, always: true }, info: 'ព្យាបាលខ្លាំង +១០ សុខភាព។' });
+        item('KRALAN', { name: 'ក្រឡាន', icon: 'KRALAN', food: { hunger: 6, hp: 3 }, info: 'បាយដំណើបដុតក្នុងបំពង់ឫស្សី។' });
+        item('WATERMELON_SLICE', { name: 'ឪឡឹកមួយចំណិត', icon: 'WATERMELON_SLICE', food: { hunger: 2, hp: 1 }, info: 'ឪឡឹកត្រជាក់ផ្អែម។' });
+        item('SANKHYA_LAPOV', { name: 'សង់ខ្យាល្ពៅ', icon: 'SANKHYA_LAPOV', rarity: 'Uncommon', food: { hunger: 10, hp: 5 }, info: 'នំល្ពៅបំពេញដោយសង់ខ្យាខ្ទិះដូង។' });
+        item('NAGA_PEARL', { name: 'កែវនាគ', icon: 'NAGA_PEARL', stack: 16, rarity: 'Rare', info: 'ចុចស្ដាំ៖ ផ្លាស់ទីភ្លាមទៅកន្លែងដែលអ្នកមើល (៤០ ប្លុក) ខូច ២។' });
+        item('HERBAL_POTION', { name: 'ថ្នាំបុរាណ', icon: 'HERBAL_POTION', stack: 1, rarity: 'Uncommon', food: { hunger: 0, hp: 6, speed: 45, always: true, bottle: true }, info: 'ព្យាបាល +៦ និងរត់លឿន ៤៥ វិនាទី។' });
+        item('CROSSBOW', { name: 'ស្នា', icon: 'CROSSBOW', stack: 1, tool: { kind: 'crossbow', tier: 3, speed: 1, damage: 2, uses: 326 }, info: 'ចុចស្ដាំ៖ បាញ់ព្រួញខ្លាំងភ្លាម (ត្រូវការព្រួញ)។ ដូចចម្លាក់បាយ័ន។' });
+        item('FIREWORK', { name: 'កាំជ្រួច', icon: 'FIREWORK', info: 'ចុចស្ដាំ៖ បាញ់កាំជ្រួចលើមេឃ សម្រាប់បុណ្យចូលឆ្នាំ។' });
+        item('ROPE', { name: 'ខ្សែពួរ', icon: 'ROPE', info: 'ចុចស្ដាំលើសត្វ៖ ចងវាដឹកតាមអ្នក។ ចុចម្ដងទៀតដើម្បីដោះ។' });
+        item('SADDLE', { name: 'កែប', icon: 'SADDLE', stack: 1, info: 'ដាក់លើសេះ ឬដំរី ហើយជិះ។' });
+    })();
+    function khDef(b) { return KH_BY_ID[b] || null; }
+    function khTileName(def, faceDir) {
+        const t = def.tile;
+        if (!t) return def.icon;
+        if (typeof t === 'string') return t;
+        return faceDir === 'top' ? t.top : faceDir === 'bottom' ? (t.bottom || t.side) : t.side;
+    }
+    function isLadder(b) { const d = KH_BY_ID[b]; return !!(d && d.ladder); }
+    function isGate(b) { const d = KH_BY_ID[b]; return !!(d && d.gateAxis !== undefined); }
+    function isWall(b) { return b === BLOCK.LATERITE_WALL; }
+    function isTrapdoor(b) { const d = KH_BY_ID[b]; return !!(d && d.trapdoor); }
+    function isNagaGate(b) { return b === BLOCK.NAGA_GATE_X || b === BLOCK.NAGA_GATE_Z; }
+    // Blocks drawn and collided as a set of boxes
+    function isKhShaped(b) { const d = KH_BY_ID[b]; return !!(d && (d.boxes || d.ladder || d.gateAxis !== undefined || d.wall || d.trapdoor)); }
+
+    // ---- Stairs: one entry per material; every material has 8 placed states (4 facings x upright / upside-down) ----
+    const STAIR_DEFS = [
+        { item: BLOCK.OAK_STAIRS, base: BLOCK.STAIRS_PART_0, tile: 'WOOD_PLANKS', icon: 'STAIRS_ITEM', id: 'oak_stairs', name: 'ជណ្ដើរឈើ', hardness: 1.1, tool: 'axe', tier: 0, craft: BLOCK.WOOD_PLANKS, material: 'wood' },
+        { item: BLOCK.SANDSTONE_STAIRS, base: BLOCK.SANDSTONE_STAIRS + 1, tile: 'SANDSTONE_SIDE', icon: 'SANDSTONE_STAIRS', id: 'sandstone_stairs', name: 'ជណ្ដើរថ្មភក់', hardness: 1.6, tool: null, tier: 1, craft: BLOCK.SANDSTONE, material: 'stone' },
+        { item: BLOCK.STONE_STAIRS, base: BLOCK.STONE_STAIRS + 1, tile: 'STONE', icon: 'STONE_STAIRS', id: 'stone_stairs', name: 'ជណ្ដើរថ្ម', hardness: 2.0, tool: null, tier: 1, craft: BLOCK.STONE, material: 'stone' }
+    ];
+    const STAIR_BY_BLOCK = {};
+    STAIR_DEFS.forEach(d => { STAIR_BY_BLOCK[d.item] = d; for (let k = 0; k < 8; k++) STAIR_BY_BLOCK[d.base + k] = d; });
+    const STAIR_PLACED = STAIR_DEFS.flatMap(d => Array.from({ length: 8 }, (_, k) => d.base + k));
+    function stairDef(b) { return STAIR_BY_BLOCK[b] || null; }
+    function isStairItem(b) { const d = STAIR_BY_BLOCK[b]; return !!d && d.item === b; }
+
     // ---- Slabs: one entry per material. Every placed slab block id is one state: BOTTOM, TOP or DOUBLE ----
     // tile names the texture (looked up later, once TILES exists); tier is the pickaxe needed to get it back when mined.
     const SLAB_DEFS = [
@@ -217,7 +354,7 @@ const BLOCK = {
         return st ? { id: slabDef(b).id, type: 'SLAB', typeState: st, material: slabDef(b).material } : null;
     }
     // Items held (and shown) as their real 3D shape rather than a flat picture: stairs and slabs
-    function isShapedItem(type) { return type === BLOCK.OAK_STAIRS || isSlabItem(type); }
+    function isShapedItem(type) { return isStairItem(type) || isSlabItem(type); }
 
     // Simulation state shared between the world generator and the End dimension
     let inEnd = false;
@@ -228,6 +365,7 @@ const BLOCK = {
     function maxStack(type) {
         if (TOOLS[type] || ARMOR_PIECES[type] || type === BLOCK.BOW || type === BLOCK.SHIELD || type === BLOCK.WATER_BUCKET || isBedItem(type) || type === BLOCK.BOAT) return 1;
         if (type === BLOCK.BUCKET) return 16;
+        if (KH_BY_ID[type] && KH_BY_ID[type].stack) return KH_BY_ID[type].stack;
         return 64;
     }
 
@@ -417,12 +555,12 @@ const BLOCK = {
     // Corner shapes are not stored: they come from the neighbouring stairs when the block is drawn or collided with.
     const FACING_NAMES = ['NORTH', 'EAST', 'SOUTH', 'WEST'];
     const FACING_STEP = [[0, -1], [1, 0], [0, 1], [-1, 0]];           // N, E, S, W as [dx, dz]
-    function isStair(b) { return b >= BLOCK.STAIRS_PART_0 && b <= BLOCK.STAIRS_PART_7; }
-    function stairState(b) { const v = b - BLOCK.STAIRS_PART_0; return { facing: v & 3, top: !!(v & 4) }; }
-    function stairId(facing, top) { return BLOCK.STAIRS_PART_0 + (facing & 3) + (top ? 4 : 0); }
+    function isStair(b) { const d = STAIR_BY_BLOCK[b]; return !!d && d.item !== b; }
+    function stairState(b) { const v = b - STAIR_BY_BLOCK[b].base; return { facing: v & 3, top: !!(v & 4) }; }
+    function stairId(facing, top, def = STAIR_DEFS[0]) { return def.base + (facing & 3) + (top ? 4 : 0); }
     function isSlab(b) { const st = slabStateOf(b); return st === 'BOTTOM' || st === 'TOP'; }      // half slabs; a double slab is a full block
     function slabDropCount(b) { return slabStateOf(b) === 'DOUBLE' ? 2 : 1; }
-    function isPartialBlock(b) { return isStair(b) || isSlab(b) || b === BLOCK.FENCE; }
+    function isPartialBlock(b) { return isStair(b) || isSlab(b) || b === BLOCK.FENCE || isKhShaped(b); }
     // The step's footprint for each facing: [x0, z0, x1, z1] inside the block
     const HALF_RECT = [[0, 0, 1, 0.5], [0.5, 0, 1, 1], [0, 0.5, 1, 1], [0, 0, 0.5, 1]];
     function rectAnd(a, b) { return [Math.max(a[0], b[0]), Math.max(a[1], b[1]), Math.min(a[2], b[2]), Math.min(a[3], b[3])]; }
@@ -452,7 +590,7 @@ const BLOCK = {
         const b = world.getBlock(x, y, z);
         if (!isStair(b)) return null;
         const st = stairState(b);
-        return { id: 'oak_stairs', type: 'STAIR', facing: FACING_NAMES[st.facing], half: st.top ? 'TOP' : 'BOTTOM', shape: stairShape(world, x, y, z, st).shape };
+        return { id: stairDef(b).id, type: 'STAIR', facing: FACING_NAMES[st.facing], half: st.top ? 'TOP' : 'BOTTOM', shape: stairShape(world, x, y, z, st).shape };
     }
     // Collision and drawing boxes of a block, in block-local units: [x0, y0, z0, x1, y1, z1]
     const FULL_BOX = [[0, 0, 0, 1, 1, 1]];
@@ -462,9 +600,41 @@ const BLOCK = {
     function fenceConnects(world, x, y, z, dir) {
         const [dx, dz] = FACING_STEP[dir];
         const n = world.getBlock(x + dx, y, z + dz);
-        return n === BLOCK.FENCE || isOpaque(n) || (typeof isDoor === 'function' && isDoor(n));
+        return n === BLOCK.FENCE || isOpaque(n) || (typeof isDoor === 'function' && isDoor(n)) || isGate(n);
+    }
+    function wallConnects(world, x, y, z, dir) {
+        const [dx, dz] = FACING_STEP[dir];
+        const n = world.getBlock(x + dx, y, z + dz);
+        return isWall(n) || isOpaque(n) || isGate(n) || n === BLOCK.FENCE;
+    }
+    // Boxes of the Khmer content v2 shapes, in block-local units
+    function khBoxes(world, x, y, z, b, d, forCollision) {
+        const P = 1 / 16;
+        if (d.ladder) return [[[0, 0, 0, 1, 1, 2 * P], [14 * P, 0, 0, 1, 1, 1], [0, 0, 14 * P, 1, 1, 1], [0, 0, 0, 2 * P, 1, 1]][d.facing]];
+        if (d.gateAxis !== undefined) {
+            const sw = (bx) => d.gateAxis === 0 ? bx : [bx[2], bx[1], bx[0], bx[5], bx[4], bx[3]];
+            if (forCollision) return d.open ? [] : [sw([0, 0, 6 * P, 1, 1.5, 10 * P])];
+            const out = [sw([0, 5 * P, 7 * P, 2 * P, 1, 9 * P]), sw([14 * P, 5 * P, 7 * P, 1, 1, 9 * P])];
+            if (!d.open) out.push(sw([2 * P, 6 * P, 7 * P, 14 * P, 9 * P, 9 * P]), sw([2 * P, 12 * P, 7 * P, 14 * P, 15 * P, 9 * P]), sw([7 * P, 9 * P, 7 * P, 9 * P, 12 * P, 9 * P]));
+            else out.push(sw([0, 6 * P, 9 * P, 2 * P, 15 * P, 15 * P]), sw([14 * P, 6 * P, 9 * P, 1, 15 * P, 15 * P]));
+            return out;
+        }
+        if (d.wall) {
+            const top = forCollision ? 1.5 : 1;
+            const out = [[4 * P, 0, 4 * P, 12 * P, top, 12 * P]];
+            const segs = [[5 * P, 0, 11 * P, 4 * P], [12 * P, 5 * P, 1, 11 * P], [5 * P, 12 * P, 11 * P, 1], [0, 5 * P, 4 * P, 11 * P]];
+            for (let dir = 0; dir < 4; dir++) if (wallConnects(world, x, y, z, dir)) { const r = segs[dir]; out.push([r[0], 0, r[1], r[2], forCollision ? 1.5 : 14 * P, r[3]]); }
+            return out;
+        }
+        if (d.trapdoor) {
+            if (!d.open) return [[0, 0, 0, 1, 3 * P, 1]];
+            return [[[0, 0, 0, 1, 1, 3 * P], [13 * P, 0, 0, 1, 1, 1], [0, 0, 13 * P, 1, 1, 1], [0, 0, 0, 3 * P, 1, 1]][d.facing]];
+        }
+        return d.boxes ? d.boxes(world, x, y, z) : null;
     }
     function blockBoxes(world, x, y, z, b, forCollision = false) {
+        const kd = KH_BY_ID[b];
+        if (kd) { const kb = khBoxes(world, x, y, z, b, kd, forCollision); if (kb) return kb; }
         if (b === BLOCK.FENCE) {
             const top = forCollision ? 1.5 : 1;
             const out = [[6 / 16, 0, 6 / 16, 10 / 16, top, 10 / 16]];
@@ -664,6 +834,8 @@ const BLOCK = {
     }
 
     function isSolid(block) {
+        const kd = KH_BY_ID[block];
+        if (kd && (kd.nonSolid || kd.portal || kd.flora)) return false;
         return block !== BLOCK.AIR && block !== BLOCK.WATER && block !== BLOCK.LAVA &&
                block !== BLOCK.END_PORTAL && !isFlora(block) && !(isDoor(block) && doorState(block).open);
     }
@@ -684,7 +856,7 @@ const BLOCK = {
         return block === BLOCK.FLOWER_ROSE || block === BLOCK.FLOWER_DANDELION ||
                block === BLOCK.TALL_GRASS || block === BLOCK.TORCH || isSapling(block) || block === BLOCK.LOTUS || isCrop(block) ||
                block === BLOCK.LANTERN || block === BLOCK.OIL_LAMP || block === BLOCK.BANANA_PLANT_LOWER || block === BLOCK.BANANA_PLANT_UPPER ||
-               block === BLOCK.COCONUT_CLUSTER || block === BLOCK.PALM_FRUIT_CLUSTER;
+               block === BLOCK.COCONUT_CLUSTER || block === BLOCK.PALM_FRUIT_CLUSTER || (KH_BY_ID[block] !== undefined && !!KH_BY_ID[block].flora);
     }
 
     // ==========================================
@@ -725,7 +897,7 @@ const BLOCK = {
     function isPlaceable(type) { return !NON_PLACEABLE.has(type); }
     // Everything drawn as a flat sprite in the hand rather than a cube
     function isFlatItem(type) {
-        return NON_PLACEABLE.has(type) || isFlora(type) || type === BLOCK.FENCE;
+        return NON_PLACEABLE.has(type) || isFlora(type) || type === BLOCK.FENCE || !!(KH_BY_ID[type] && KH_BY_ID[type].icon);
     }
 
     // tier: 1 wood, 2 stone, 3 iron, 4 diamond. uses: how many blocks or hits before the tool breaks (as in Minecraft)
@@ -813,6 +985,43 @@ const BLOCK = {
         [BLOCK.BRONZE_ORE]: 2, [BLOCK.GOLD_ORE]: 3, [BLOCK.SAPPHIRE_ORE]: 3,       // stone pickaxe for bronze, iron for gold and sapphire
         ...Object.fromEntries(SLAB_PLACED.filter(b => slabDef(b).tier).map(b => [b, slabDef(b).tier]))
     };
+
+    // Fills every block / item table from the Khmer content v2 records (see KH above)
+    (function applyKhTables() {
+        const id = (k) => (typeof k === 'number' ? k : BLOCK[k]);
+        for (const def of Object.values(KH)) {
+            const b = def.id;
+            BLOCK_NAMES[b] = def.name;
+            if (def.kind === 'item' || def.kind === 'state' || def.noItem || def.stairs) NON_PLACEABLE.add(b);
+            if (def.kind !== 'item') {
+                BLOCK_HARDNESS[b] = def.hardness;
+                if (def.tool) PREFERRED_TOOL[b] = def.tool;
+                if (def.tier) MINEABLE_TIER[b] = def.tier;
+                if (def.drop) BLOCK_DROPS[b] = id(def.drop);
+                if (def.noItem) BLOCK_DROPS[b] = BLOCK.AIR;
+                if (def.light) { LIGHT_EMISSION[b] = def.light; LIGHT_SOURCE_COLOR[b] = def.lightColor || 0; }
+            }
+            if (def.food) FOOD[b] = def.food;
+            if (def.fuel) FUEL[b] = def.fuel;
+            if (def.smeltTo) SMELTING[b] = id(def.smeltTo);
+            if (def.tool && typeof def.tool === 'object') TOOLS[b] = def.tool;
+        }
+        // Stairs of every material: names, drops, hardness, tools
+        for (const d of STAIR_DEFS) {
+            for (let k = 0; k < 8; k++) {
+                const b = d.base + k;
+                BLOCK_NAMES[b] = d.name;
+                BLOCK_DROPS[b] = d.item;
+                BLOCK_HARDNESS[b] = d.hardness;
+                NON_PLACEABLE.add(b);
+                if (d.tool) PREFERRED_TOOL[b] = d.tool;
+                if (d.tier) MINEABLE_TIER[b] = d.tier;
+            }
+        }
+        // Shears cut leaves and wool quickly
+        [BLOCK.LEAVES, BLOCK.APPLE_LEAVES, BLOCK.BANANA_LEAVES, BLOCK.PALM_LEAVES, BLOCK.COCONUT_LEAVES, BLOCK.WOOL].forEach(b => { PREFERRED_TOOL[b] = 'shears'; });
+        SMELTING[BLOCK.CLAY] = BLOCK.BRICKS;
+    })();
 
     // ==========================================
     // OPTIONS & SETTINGS MANAGER
@@ -1644,7 +1853,7 @@ const BLOCK = {
                 default:
                     if (typeof isDoor === 'function' && isDoor(type)) return 'wood';
                     if (typeof slabDef === 'function' && slabDef(type)) return slabDef(type).material === 'wood' ? 'wood' : 'stone';
-                    if (typeof isStair === 'function' && (isStair(type) || type === BLOCK.OAK_STAIRS)) return 'wood';
+                    if (typeof stairDef === 'function' && stairDef(type)) return stairDef(type).material === 'wood' ? 'wood' : 'stone';
                     if (typeof isCrop === 'function' && isCrop(type)) return 'plant';
                     return 'stone';
             }
@@ -2472,12 +2681,43 @@ const BLOCK = {
     PALM_JUICE: 180,
     BRONZE_ORE: 181, BRONZE_INGOT: 182, GOLD_ORE: 183, GOLD_INGOT: 184, SAPPHIRE_ORE: 185, SAPPHIRE: 186,
     SAPPHIRE_SWORD: 187, BRONZE_SPEAR: 188, GOLDEN_CROWN: 189,
-    KHMER_SWORD: 190, SACRED_SWORD: 191, GOLDEN_KHAN: 192
+    KHMER_SWORD: 190, SACRED_SWORD: 191, GOLDEN_KHAN: 192,
+    // Khmer content v2 (art-data.js)
+    LADDER: 193, BRICKS: 194, CLAY: 195, MOSSY_COBBLESTONE: 196, RICE_STRAW_SIDE: 197, RICE_STRAW_TOP: 198,
+    PUMPKIN_SIDE: 199, WATERMELON_SIDE: 200, PALM_LEAF_SHELF: 201, YANTRA_TABLE_TOP: 202, YANTRA_TABLE_SIDE: 203, GOLD_BLOCK: 204,
+    IRON_BLOCK: 205, BRONZE_BLOCK: 206, DIAMOND_BLOCK: 207, SAPPHIRE_BLOCK: 208, FIRECRACKER_SIDE: 209, FIRECRACKER_TOP: 210,
+    TRAPDOOR: 211, PATALA_STONE: 212, ASH_SAND: 213, NAGA_GEM_LAMP: 214, NAGA_GATE: 215, JAR_SIDE: 216,
+    JAR_TOP: 217, ANVIL_SIDE: 218, POT_SIDE: 219, CART_SIDE: 220, SIGN_FACE: 221, BAMBOO_PLANT: 222,
+    FLAME: 223, CAMPFIRE_LOG: 224, FENCE_GATE: 225, LATERITE_WALL: 226, SANDSTONE_STAIRS: 227, STONE_STAIRS: 228,
+    FLINT: 229, FLINT_AND_STEEL: 230, SHEARS: 231, FISHING_ROD: 232, RAW_FISH: 233, GRILLED_FISH: 234,
+    COMPASS: 235, CLOCK: 236, MAP: 237, PAPER: 238, PALM_LEAF_BOOK: 239, SUGAR: 240,
+    EGG: 241, FEATHER: 242, GUNPOWDER: 243, MILK_BUCKET: 244, LAVA_BUCKET: 245, MANGO: 246,
+    GOLDEN_MANGO: 247, KRALAN: 248, NAGA_PEARL: 249, HERBAL_POTION: 250, CROSSBOW: 251, FIREWORK: 252,
+    ROPE: 253, SADDLE: 254, ANVIL: 255, WATER_JAR: 256, HERBAL_POT: 257, CAMPFIRE: 258,
+    SIGN: 259, OX_CART: 260, BAMBOO: 261, WATERMELON_SLICE: 262, SANKHYA_LAPOV: 263, WHEAT_STAGE_1: 264,
+    WHEAT_STAGE_2: 265, WHEAT_STAGE_3: 266, WHEAT_STAGE_4: 267, WHEAT_STAGE_5: 268, WHEAT_STAGE_6: 269, WHEAT_STAGE_7: 270
 };
 
-    const ATLAS_SIZE = 256;
+    const ATLAS_SIZE = 512;                 // 32 x 32 tiles of 16 px (room for the new Khmer content)
     const TILE_PX = 16;
-    const TILES_PER_ROW = 16;
+    const TILES_PER_ROW = 32;
+
+    // Redrawn pixel art (art-data.js, generated by tools/build-art-data.js): "WxH|palette|pixels"
+    function decodeArt(entry) {
+        const ART = window.ANGKOR_ART;
+        if (!ART || !entry) return null;
+        const [size, palStr, pix] = entry.split('|');
+        const [w, h] = size.split('x').map(Number);
+        const pal = palStr.split(',').map(hx => [parseInt(hx.slice(0, 2), 16), parseInt(hx.slice(2, 4), 16), parseInt(hx.slice(4, 6), 16), hx.length > 6 ? parseInt(hx.slice(6, 8), 16) : 255]);
+        const px = new Uint8ClampedArray(w * h * 4);
+        for (let i = 0; i < w * h; i++) {
+            const ch = pix[i];
+            if (ch === '.') continue;
+            const c = pal[ART.alph.indexOf(ch)];
+            px.set(c, i * 4);
+        }
+        return { w, h, px };
+    }
 
     function pseudoRandom(x, y, seed = 0) {
         let n = Math.sin(x * 12.9898 + y * 78.233 + seed) * 43758.5453;
@@ -4081,6 +4321,19 @@ const BLOCK = {
             return [c, c, clamp255(c - 6)];
         });
 
+        // Replace every tile that has a redrawn version (clearer v2 art)
+        const ART = window.ANGKOR_ART;
+        if (ART) {
+            for (const [name, entry] of Object.entries(ART.tiles)) {
+                if (TILES[name] === undefined) continue;
+                const a = decodeArt(entry);
+                if (!a || a.w !== TILE_PX || a.h !== TILE_PX) continue;
+                const img = ctx.createImageData(TILE_PX, TILE_PX);
+                img.data.set(a.px);
+                ctx.putImageData(img, (TILES[name] % TILES_PER_ROW) * TILE_PX, Math.floor(TILES[name] / TILES_PER_ROW) * TILE_PX);
+            }
+        }
+
         const texture = new THREE.CanvasTexture(canvas);
         texture.magFilter = THREE.NearestFilter;
         texture.minFilter = THREE.NearestFilter;
@@ -4118,7 +4371,9 @@ const BLOCK = {
     }
 
     function getBlockFaceTile(blockType, faceDir) {
-    if (isStair(blockType)) return TILES.WOOD_PLANKS;
+    if (isStair(blockType)) return TILES[stairDef(blockType).tile];
+    if (KH_BY_ID[blockType]) { const kn = khTileName(KH_BY_ID[blockType], faceDir); if (TILES[kn] !== undefined) return TILES[kn]; }
+    if (isStairItem(blockType)) return TILES[stairDef(blockType).icon];
     if (slabStateOf(blockType)) return TILES[slabDef(blockType).tile];
     switch (blockType) {
         case BLOCK.GRASS:
@@ -4294,6 +4549,12 @@ const BLOCK = {
     }
 }
 
+    // The flat picture of an item (its icon), which for a few blocks differs from the texture on the placed block
+    function getItemIconTile(type) {
+        const d = KH_BY_ID[type];
+        if (d && d.icon && TILES[d.icon] !== undefined) return TILES[d.icon];
+        return getBlockFaceTile(type, 'side');
+    }
     const iconCache = {};
     function getBlockIconDataURL(blockType) {
         if (iconCache[blockType]) return iconCache[blockType];
@@ -4315,7 +4576,7 @@ const BLOCK = {
             }
         };
 
-        if (isPlaceable(blockType) && !isFlora(blockType) && blockType !== BLOCK.WATER && blockType !== BLOCK.FENCE) {
+        if (isPlaceable(blockType) && !isFlora(blockType) && blockType !== BLOCK.WATER && blockType !== BLOCK.FENCE && !(KH_BY_ID[blockType] && KH_BY_ID[blockType].icon)) {
             // Isometric cube: top, lit left side, shaded right side (shows a log's rings, a grass top, ...)
             const k = 14 / TILE_PX;
             drawFace(getBlockFaceTile(blockType, 'top'), [k, -k / 2, k, k / 2, 2, 9], 0);
@@ -4323,7 +4584,7 @@ const BLOCK = {
             drawFace(getBlockFaceTile(blockType, 'side'), [k, -k / 2, 0, k, 16, 16], 0.34);
             ictx.setTransform(1, 0, 0, 1, 0, 0);
         } else {
-            const tile = getBlockFaceTile(blockType, 'side');
+            const tile = getItemIconTile(blockType);
             const tx = (tile % TILES_PER_ROW) * TILE_PX;
             const ty = Math.floor(tile / TILES_PER_ROW) * TILE_PX;
             ictx.drawImage(atlas.canvas, tx, ty, TILE_PX, TILE_PX, 0, 0, 32, 32);
@@ -4645,7 +4906,7 @@ const BLOCK = {
             this.cz = cz;
             this.worldX = cx * CHUNK_SIZE_X;
             this.worldZ = cz * CHUNK_SIZE_Z;
-            this.blocks = new Uint8Array(CHUNK_SIZE_X * CHUNK_SIZE_Z * WORLD_HEIGHT);
+            this.blocks = new Uint16Array(CHUNK_SIZE_X * CHUNK_SIZE_Z * WORLD_HEIGHT);   // 16-bit: block ids go past 255
             this.mesh = null;
             this.waterMesh = null;
             this.glowMesh = null;
@@ -4794,6 +5055,10 @@ const BLOCK = {
                 this.generateEndTerrain(chunk);
                 return this.finishChunk(chunk);
             }
+            if (isPatalaRegion(chunk.worldX + 8, chunk.worldZ + 8)) {
+                generatePatalaChunk(chunk);
+                return this.finishChunk(chunk);
+            }
 
             const stronghold = getStronghold();
             const nearStronghold = Math.abs(chunk.worldX + 8 - stronghold.x) < 26 && Math.abs(chunk.worldZ + 8 - stronghold.z) < 26;
@@ -4885,6 +5150,23 @@ const BLOCK = {
 
                     if (villages.some(v => villageDist(v, wx, wz) <= VILLAGE_RADIUS + 3)) continue;   // keep villages clear
                     if (khStructs.some(st => khmerFootprint(st, wx, wz))) continue;                     // and temples and farms
+                    // Clay patches on the bed of shallow water
+                    if (chunk.getBlock(lx, SEA_LEVEL, lz) === BLOCK.WATER && pseudoRandom(wx >> 2, wz >> 2, currentSeed + 71) < 0.3) {
+                        for (let y = SEA_LEVEL; y > 1; y--) {
+                            const b = chunk.getBlock(lx, y, lz);
+                            if (b === BLOCK.WATER) continue;
+                            if (b === BLOCK.SAND || b === BLOCK.DIRT || b === BLOCK.GRAVEL) chunk.setBlock(lx, y, lz, BLOCK.CLAY);
+                            break;
+                        }
+                    }
+                    // Bamboo clumps on the banks
+                    if ((chunk.getBlock(lx, SEA_LEVEL, lz) === BLOCK.GRASS || chunk.getBlock(lx, SEA_LEVEL, lz) === BLOCK.SAND) && chunk.getBlock(lx, SEA_LEVEL + 1, lz) === BLOCK.AIR &&
+                        pseudoRandom(wx, wz, currentSeed + 73) < 0.06 &&
+                        [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dz]) => chunk.getBlock(lx + dx, SEA_LEVEL, lz + dz) === BLOCK.WATER)) {
+                        const h = 2 + Math.floor(pseudoRandom(wx, wz, currentSeed + 74) * 3);
+                        for (let k = 1; k <= h; k++) chunk.setBlock(lx, SEA_LEVEL + k, lz, BLOCK.BAMBOO);
+                        continue;
+                    }
                     // Lotus flowers float on shallow water
                     if (chunk.getBlock(lx, SEA_LEVEL, lz) === BLOCK.WATER && chunk.getBlock(lx, SEA_LEVEL - 3, lz) !== BLOCK.WATER &&
                         pseudoRandom(wx, wz, currentSeed + 57) < 0.07) {
@@ -4905,7 +5187,8 @@ const BLOCK = {
                                 const roomy = lx >= 3 && lx <= CHUNK_SIZE_X - 4 && lz >= 3 && lz <= CHUNK_SIZE_Z - 4;
                                 this.growOakTree(wx, y + 1, wz, chunk, null, roomy ? null : 'broad');
                             } else if (treeSeed > 0.86) {
-                                if (treeSeed > 0.965) chunk.setBlock(lx, y + 1, lz, BLOCK.FLOWER_ROSE);
+                                if (treeSeed > 0.997 && getBiome(wx, wz) !== 'Forest') chunk.setBlock(lx, y + 1, lz, pseudoRandom(wx, wz, currentSeed + 77) < 0.5 ? BLOCK.PUMPKIN : BLOCK.WATERMELON);
+                                else if (treeSeed > 0.965) chunk.setBlock(lx, y + 1, lz, BLOCK.FLOWER_ROSE);
                                 else if (treeSeed > 0.935) chunk.setBlock(lx, y + 1, lz, BLOCK.FLOWER_DANDELION);
                                 else chunk.setBlock(lx, y + 1, lz, BLOCK.TALL_GRASS);
                             }
@@ -5643,15 +5926,23 @@ const BLOCK = {
                         // outer boundary is skipped when an opaque block covers it
                         if (isPartialBlock(block)) {
                             const t = getTileUV(block === BLOCK.FENCE ? TILES.WOOD_PLANKS : getBlockFaceTile(block, 'side'));      // planks, stone or cobblestone
+                            const tTop = KH_BY_ID[block] ? getTileUV(getBlockFaceTile(block, 'top')) : t, tBot = KH_BY_ID[block] ? getTileUV(getBlockFaceTile(block, 'bottom')) : t;
                             const U = (f) => t.u0 + (t.u1 - t.u0) * f, V = (f) => t.v0 + (t.v1 - t.v0) * f;
+                            const subOf = (tt) => (a0, a1, b0, b1) => ({ u0: tt.u0 + (tt.u1 - tt.u0) * a0, u1: tt.u0 + (tt.u1 - tt.u0) * a1, v0: tt.v0 + (tt.v1 - tt.v0) * b0, v1: tt.v0 + (tt.v1 - tt.v0) * b1 });
                             const sub = (a0, a1, b0, b1) => ({ u0: U(a0), u1: U(a1), v0: V(b0), v1: V(b1) });
+                            const subTop = subOf(tTop), subBot = subOf(tBot);
+                            if (KH_BY_ID[block] && KH_BY_ID[block].flame) {            // campfire: the flame as two crossed glowing quads
+                                const fu = getTileUV(TILES.FLAME);
+                                addGlowQuad([wx + 0.1, wy + 0.9, wz + 0.1], [wx + 0.9, wy + 0.9, wz + 0.9], [wx + 0.9, wy + 0.1, wz + 0.9], [wx + 0.1, wy + 0.1, wz + 0.1], [0, 1, 0], fu, 1.0);
+                                addGlowQuad([wx + 0.1, wy + 0.9, wz + 0.9], [wx + 0.9, wy + 0.9, wz + 0.1], [wx + 0.9, wy + 0.1, wz + 0.1], [wx + 0.1, wy + 0.1, wz + 0.9], [0, 1, 0], fu, 1.0);
+                            }
                             const covered = (dx, dy, dz) => isOpaque(this.getBlock(wx + dx, wy + dy, wz + dz));
                             for (const [a, b, c, d, e, f] of blockBoxes(this, wx, wy, wz, block)) {
                                 const X0 = wx + a, Y0 = wy + b, Z0 = wz + c, X1 = wx + d, Y1 = wy + e, Z1 = wz + f;
                                 if (!(e === 1 && covered(0, 1, 0)))
-                                    addQuad(false, [X0, Y1, Z1], [X1, Y1, Z1], [X1, Y1, Z0], [X0, Y1, Z0], [0, 1, 0], sub(a, d, 1 - f, 1 - c), 1.0);
+                                    addQuad(false, [X0, Y1, Z1], [X1, Y1, Z1], [X1, Y1, Z0], [X0, Y1, Z0], [0, 1, 0], subTop(a, d, 1 - f, 1 - c), 1.0);
                                 if (!(b === 0 && covered(0, -1, 0)))
-                                    addQuad(false, [X0, Y0, Z0], [X1, Y0, Z0], [X1, Y0, Z1], [X0, Y0, Z1], [0, -1, 0], sub(a, d, c, f), 0.5);
+                                    addQuad(false, [X0, Y0, Z0], [X1, Y0, Z0], [X1, Y0, Z1], [X0, Y0, Z1], [0, -1, 0], subBot(a, d, c, f), 0.5);
                                 if (!(d === 1 && covered(1, 0, 0)))
                                     addQuad(false, [X1, Y1, Z1], [X1, Y1, Z0], [X1, Y0, Z0], [X1, Y0, Z1], [1, 0, 0], sub(1 - f, 1 - c, b, e), 0.7);
                                 if (!(a === 0 && covered(-1, 0, 0)))
@@ -5664,6 +5955,20 @@ const BLOCK = {
                             continue;
                         }
 
+                        // Naga gate: a glowing film across the middle of the block, along the frame
+                        if (isNagaGate(block)) {
+                            const uv = getTileUV(TILES.NAGA_GATE);
+                            if (block === BLOCK.NAGA_GATE_X) {
+                                const zc = wz + 0.5;
+                                addGlowQuad([wx, wy + 1, zc], [wx + 1, wy + 1, zc], [wx + 1, wy, zc], [wx, wy, zc], [0, 0, 1], uv, 1.0);
+                                addGlowQuad([wx + 1, wy + 1, zc], [wx, wy + 1, zc], [wx, wy, zc], [wx + 1, wy, zc], [0, 0, -1], uv, 1.0);
+                            } else {
+                                const xc = wx + 0.5;
+                                addGlowQuad([xc, wy + 1, wz + 1], [xc, wy + 1, wz], [xc, wy, wz], [xc, wy, wz + 1], [1, 0, 0], uv, 1.0);
+                                addGlowQuad([xc, wy + 1, wz], [xc, wy + 1, wz + 1], [xc, wy, wz + 1], [xc, wy, wz], [-1, 0, 0], uv, 1.0);
+                            }
+                            continue;
+                        }
                         if (block === BLOCK.END_PORTAL) {
                             const uv = getTileUV(TILES.END_PORTAL);
                             const py = wy + 0.75;
@@ -6036,7 +6341,7 @@ const BLOCK = {
         }
 
         update(dt) {
-            if (inEnd) { this.level += (0 - this.level) * Math.min(1, dt * 2); this.rainLines.visible = false; this.flash = 0; this.flashEl.style.opacity = 0; audio.setRain(0, false); return; }
+            if (inEnd || inPatala) { this.level += (0 - this.level) * Math.min(1, dt * 2); this.rainLines.visible = false; this.flash = 0; this.flashEl.style.opacity = 0; audio.setRain(0, false); return; }
             if (multiplayer.role !== 'client') {                    // the host (or a solo player) runs the cycle; guests are told
                 this.timer -= dt;
                 if (this.timer <= 0) this.set(this.nextState());
@@ -6150,6 +6455,8 @@ const BLOCK = {
     // Per-species data that the models and loot code read. faceLayout is an 8x8 pixel face (row by row, top first) using the
     // palette letters; drops are rolled one by one on death: with probability `chance`, min..max of `item`.
     const ENTITY_REGISTRY = {
+        chicken: { name: 'Chicken', hp: 4, drops: [{ item: BLOCK.RAW_CHICKEN, chance: 1.0, min: 1, max: 1 }, { item: BLOCK.FEATHER, chance: 1.0, min: 0, max: 2 }] },
+        creeper: { name: 'Laterite spirit', hp: 20, drops: [{ item: BLOCK.GUNPOWDER, chance: 1.0, min: 0, max: 2 }] },
         cow: {
             name: 'Cow',
             hp: 10,
@@ -6655,6 +6962,7 @@ const BLOCK = {
     class HorseMob extends Mob {
         constructor(x, y, z, scene) {
             super('horse', x, y, z, scene);
+            this.rideEye = 1.0; this.rideSpeed = 1.7;
             this.width = 0.85;
             this.height = ENTITY_PROFILES.horse.height;
             this.health = ENTITY_REGISTRY.horse.hp;
@@ -6888,6 +7196,12 @@ const BLOCK = {
                 canvas.width = w; canvas.height = hgt;
                 const g = canvas.getContext('2d');
                 paint((x, y, col) => { g.fillStyle = col; g.fillRect(x, y, 1, 1); }, w, hgt);
+                // Redrawn faces (art-data.js) replace the procedural ones
+                const art = window.ANGKOR_ART && decodeArt(window.ANGKOR_ART.faces[key]);
+                if (art && art.w === w && art.h === hgt) {
+                    g.clearRect(0, 0, w, hgt);
+                    const img = g.createImageData(w, hgt); img.data.set(art.px); g.putImageData(img, 0, 0);
+                }
                 const tex = new THREE.CanvasTexture(canvas);
                 tex.magFilter = THREE.NearestFilter;
                 tex.minFilter = THREE.NearestFilter;
@@ -8278,6 +8592,12 @@ const BLOCK = {
                 const pivot = new THREE.Group(); pivot.position.set(ax, 2.1, 0);
                 const arm = box(0.3, 1.55, 0.3, limb); arm.geometry.translate(0, -0.72, 0);
                 pivot.add(arm); this.group.add(pivot); this.arms.push(pivot);
+                if (ax > 0) {                                     // Dvarapala: a gada club held point-down in the right hand
+                    const wood = new THREE.MeshLambertMaterial({ color: 0x6e5a44 });
+                    const shaft = box(0.12, 1.2, 0.12, wood); shaft.position.set(0.05, -1.45, 0.25); pivot.add(shaft);
+                    const knob = box(0.32, 0.42, 0.32, wood); knob.position.set(0.05, -2.05, 0.25); pivot.add(knob);
+                    const band = box(0.34, 0.08, 0.34, gold); band.position.set(0.05, -1.8, 0.25); pivot.add(band);
+                }
             });
             this.legs = [];
             [-0.24, 0.24].forEach(lx => {
@@ -8396,6 +8716,554 @@ const BLOCK = {
         if (!isCreative()) player.inventory.consumeSelectedItem();
         player.triggerSwing();
         return true;
+    }
+
+
+    // ==========================================
+    // KHMER CONTENT v2: NEW ANIMALS AND MONSTERS
+    //   water buffalo (krabei), elephant (domrei), village dog (chhkae), cat (chhma), monkey (sva), bat (prachiev)
+    //   crocodile (krapeu), cobra (pous vek), Ap (a flying ghost head), shadow ghost (khmoch sramaol)
+    // Faces are the redrawn 8x8 faces from art-data.js; bodies are mottled skins.
+    // ==========================================
+    const khBox = (w, h, d, m) => new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
+    const khSkin = (key, rgb, seed, amt = 16) => MobSkins.mat(key, 8, 8, MobSkins.mottle(rgb, seed, amt));
+    const khFace = (name, rgb, seed) => MobSkins.mat('new_' + name + '_face', 8, 8, MobSkins.mottle(rgb, seed, 8));
+    function khLegs(mob, mat, w, h, spots) {
+        mob.legs = [];
+        spots.forEach(([lx, lz]) => {
+            const l = khBox(w, h, w, mat); l.geometry.translate(0, -h / 2, 0);
+            l.position.set(lx, h, lz); mob.group.add(l); mob.legs.push(l);
+        });
+    }
+    Object.assign(ENTITY_PROFILES, {
+        buffalo: { height: 1.5, heightOffset: 0 }, elephant: { height: 2.7, heightOffset: 0 }, dog: { height: 0.85, heightOffset: 0 },
+        cat: { height: 0.7, heightOffset: 0 }, monkey: { height: 0.9, heightOffset: 0 }, bat: { height: 0.5, heightOffset: 0 }
+    });
+    Object.assign(ENTITY_REGISTRY, {
+        buffalo: { name: 'Water buffalo', hp: 15, drops: [{ item: BLOCK.RAW_BEEF, chance: 1, min: 1, max: 3 }, { item: BLOCK.LEATHER, chance: 0.9, min: 0, max: 2 }] },
+        elephant: { name: 'Elephant', hp: 40, drops: [{ item: BLOCK.LEATHER, chance: 1, min: 2, max: 4 }] },
+        crocodile: { name: 'Crocodile', hp: 24, drops: [{ item: BLOCK.LEATHER, chance: 1, min: 1, max: 3 }, { item: BLOCK.RAW_FISH, chance: 0.5, min: 1, max: 1 }] },
+        cobra: { name: 'Cobra', hp: 8, drops: [{ item: BLOCK.STRING, chance: 0.5, min: 1, max: 1 }] },
+        ap: { name: 'Ap', hp: 16, drops: [{ item: BLOCK.ROTTEN_FLESH, chance: 1, min: 0, max: 2 }, { item: BLOCK.FEATHER, chance: 0.4, min: 1, max: 2 }] },
+        shadow: { name: 'Shadow ghost', hp: 40, drops: [{ item: BLOCK.NAGA_PEARL, chance: 0.6, min: 1, max: 1 }] }
+    });
+    Object.assign(ANIMAL_DIET, { buffalo: [BLOCK.WHEAT, BLOCK.RICE_STRAW], elephant: [BLOCK.BANANA, BLOCK.SUGAR], monkey: [BLOCK.BANANA, BLOCK.MANGO] });
+    Object.assign(IDLE_SOUNDS, { buffalo: 'cow_idle', elephant: 'horse_idle', dog: 'pig_idle', cat: 'chicken_idle' });
+
+    // Water buffalo: slate grey, long swept-back horns, likes water; milk it with a bucket
+    class BuffaloMob extends Mob {
+        constructor(x, y, z, scene) {
+            super('buffalo', x, y, z, scene);
+            this.breedFood = BLOCK.WHEAT; this.loot = null;
+            this.width = 1.0; this.height = ENTITY_PROFILES.buffalo.height; this.health = 15; this.speed = 1.3;
+        }
+        buildModel() {
+            const GREY = [86, 86, 92];
+            const hide = khSkin('kh_buffalo_hide', GREY, 501, 14), face = khFace('buffalo', GREY, 503);
+            const horn = new THREE.MeshLambertMaterial({ color: 0xd8d0bc });
+            const body = khBox(0.86, 0.8, 1.3, hide); body.position.set(0, 0.85, 0);
+            const head = skinnedBox(0.52, 0.5, 0.5, face, hide); head.position.set(0, 1.0, 0.82);
+            this.group.add(body, head);
+            [-1, 1].forEach(sx => {                                     // horns sweep out and back
+                const a = khBox(0.36, 0.1, 0.12, horn); a.position.set(sx * 0.4, 1.3, 0.78); this.group.add(a);
+                const b = khBox(0.1, 0.1, 0.3, horn); b.position.set(sx * 0.58, 1.33, 0.66); this.group.add(b);
+            });
+            khLegs(this, hide, 0.24, 0.5, [[-0.28, 0.42], [0.28, 0.42], [-0.28, -0.42], [0.28, -0.42]]);
+        }
+    }
+
+    // Elephant: rideable with a saddle (a howdah), eats bananas
+    class ElephantMob extends Mob {
+        constructor(x, y, z, scene) {
+            super('elephant', x, y, z, scene);
+            this.breedFood = BLOCK.BANANA; this.loot = null;
+            this.width = 1.6; this.height = ENTITY_PROFILES.elephant.height; this.health = 40; this.speed = 1.2;
+            this.rideEye = 1.7; this.rideSpeed = 1.35;
+        }
+        buildModel() {
+            const GREY = [120, 120, 128];
+            const hide = khSkin('kh_elephant_hide', GREY, 511, 12), face = khFace('elephant', GREY, 513);
+            const tusk = new THREE.MeshLambertMaterial({ color: 0xf4eedc });
+            const body = khBox(1.3, 1.25, 2.0, hide); body.position.set(0, 1.55, 0);
+            const head = skinnedBox(0.95, 0.95, 0.8, face, hide); head.position.set(0, 1.95, 1.2);
+            const trunk = khBox(0.26, 1.1, 0.26, hide); trunk.position.set(0, 1.1, 1.55);
+            this.group.add(body, head, trunk);
+            [-1, 1].forEach(sx => {
+                const ear = khBox(0.08, 0.8, 0.6, hide); ear.position.set(sx * 0.55, 2.0, 1.0); this.group.add(ear);
+                const t = khBox(0.1, 0.1, 0.5, tusk); t.position.set(sx * 0.24, 1.45, 1.6); t.rotation.x = -0.4; this.group.add(t);
+            });
+            this.howdah = new THREE.Group();
+            const cloth = khBox(1.36, 0.08, 1.2, new THREE.MeshLambertMaterial({ color: 0xb02828 })); cloth.position.set(0, 2.2, -0.1);
+            const seat = khBox(0.9, 0.4, 0.9, new THREE.MeshLambertMaterial({ color: 0x8a2a1a })); seat.position.set(0, 2.44, -0.1);
+            const roof = khBox(1.0, 0.1, 1.0, new THREE.MeshLambertMaterial({ color: 0xf2c64a })); roof.position.set(0, 2.7, -0.1);
+            this.howdah.add(cloth, seat, roof); this.howdah.visible = false; this.group.add(this.howdah);
+            khLegs(this, hide, 0.42, 0.95, [[-0.42, 0.65], [0.42, 0.65], [-0.42, -0.65], [0.42, -0.65]]);
+        }
+        animateLimbs(dt) { super.animateLimbs(dt); if (this.howdah) this.howdah.visible = !!this.saddled; }
+    }
+
+    // Village dog: tame it with a bone; a tame dog follows you and bites monsters near you
+    class DogMob extends Mob {
+        constructor(x, y, z, scene) {
+            super('dog', x, y, z, scene);
+            this.width = 0.6; this.height = ENTITY_PROFILES.dog.height; this.health = 8; this.speed = 2.6;
+            this.biteCd = 0;
+        }
+        buildModel() {
+            const TAN = [200, 144, 80];
+            const fur = khSkin('kh_dog_fur', TAN, 521, 14), face = khFace('dog', TAN, 523);
+            const body = khBox(0.42, 0.42, 0.85, fur); body.position.set(0, 0.6, 0);
+            const head = skinnedBox(0.4, 0.4, 0.36, face, fur); head.position.set(0, 0.85, 0.55);
+            const tail = khBox(0.1, 0.1, 0.4, fur); tail.position.set(0, 0.78, -0.55); tail.rotation.x = 0.6;
+            this.collar = khBox(0.44, 0.08, 0.1, new THREE.MeshLambertMaterial({ color: 0xc02828 })); this.collar.position.set(0, 0.7, 0.4); this.collar.visible = false;
+            this.group.add(body, head, tail, this.collar);
+            khLegs(this, fur, 0.14, 0.4, [[-0.13, 0.28], [0.13, 0.28], [-0.13, -0.28], [0.13, -0.28]]);
+        }
+        updateAI(dt, player) { khPetAI(this, dt, player, BLOCK.BONE, true); }
+    }
+    // Cat: tame it with fish; laterite spirits keep away from a tame cat
+    class CatMob extends Mob {
+        constructor(x, y, z, scene) {
+            super('cat', x, y, z, scene);
+            this.width = 0.45; this.height = ENTITY_PROFILES.cat.height; this.health = 10; this.speed = 2.4;
+        }
+        buildModel() {
+            const GREY = [122, 122, 122];
+            const fur = khSkin('kh_cat_fur', GREY, 531, 18), face = khFace('cat', GREY, 533);
+            const body = khBox(0.32, 0.32, 0.7, fur); body.position.set(0, 0.45, 0);
+            const head = skinnedBox(0.34, 0.3, 0.3, face, fur); head.position.set(0, 0.62, 0.45);
+            const tail = khBox(0.08, 0.08, 0.45, fur); tail.position.set(0, 0.6, -0.5); tail.rotation.x = -0.7;
+            this.group.add(body, head, tail);
+            khLegs(this, fur, 0.1, 0.3, [[-0.1, 0.22], [0.1, 0.22], [-0.1, -0.22], [0.1, -0.22]]);
+        }
+        updateAI(dt, player) { khPetAI(this, dt, player, BLOCK.RAW_FISH, false); }
+    }
+    // Tame pets: right-click with their food tames them (1 in 3 tries); a tame pet follows and (the dog) defends you
+    function khPetAI(pet, dt, player, food, defends) {
+        pet.biteCd = Math.max(0, (pet.biteCd || 0) - dt);
+        if (pet.tamed) {
+            if (pet.collar) pet.collar.visible = true;
+            if (defends) {
+                let foe = null, best = 7;
+                for (const m of mobMgr.mobs) {
+                    if (!m.isHostile || m.isDead) continue;
+                    const d = m.pos.distanceTo(pet.pos);
+                    if (d < best && m.pos.distanceTo(player.pos) < 12) { best = d; foe = m; }
+                }
+                if (foe) {
+                    mobMgr.walkToward(pet, foe.pos, 1.3);
+                    if (best < 1.4 && pet.biteCd <= 0) { pet.biteCd = 0.8; foe.takeDamage(4, new THREE.Vector3().subVectors(foe.pos, pet.pos).setY(0).normalize()); }
+                    return;
+                }
+            }
+            const d = Math.hypot(player.pos.x - pet.pos.x, player.pos.z - pet.pos.z);
+            if (d > 24) { pet.pos.set(player.pos.x + 1, player.pos.y, player.pos.z + 1); return; }      // catches up by running
+            if (d > 3.5) { mobMgr.walkToward(pet, player.pos, 1.0); return; }
+            pet.isMoving = false; pet.vel.x *= 0.5; pet.vel.z *= 0.5;
+            return;
+        }
+        khWander(pet, dt);
+    }
+    function khWander(mob, dt) {
+        mob.moveTimer -= dt;
+        if (mob.moveTimer <= 0) { mob.moveTimer = 2 + Math.random() * 4; mob.isMoving = Math.random() < 0.6; mob.yaw += (Math.random() - 0.5) * 1.5; }
+        if (mob.isMoving) { mob.vel.x = Math.sin(mob.yaw) * mob.speed; mob.vel.z = Math.cos(mob.yaw) * mob.speed; }
+    }
+
+    // Monkey: lives near temples and forests; now and then snatches a piece of food from your hand and runs off
+    class MonkeyMob extends Mob {
+        constructor(x, y, z, scene) {
+            super('monkey', x, y, z, scene);
+            this.breedFood = BLOCK.BANANA; this.loot = null;
+            this.width = 0.5; this.height = ENTITY_PROFILES.monkey.height; this.health = 10; this.speed = 2.6;
+            this.stealCd = 20;
+        }
+        buildModel() {
+            const BROWN = [122, 90, 58];
+            const fur = khSkin('kh_monkey_fur', BROWN, 541, 14), face = khFace('monkey', BROWN, 543);
+            const body = khBox(0.4, 0.5, 0.3, fur); body.position.set(0, 0.55, 0);
+            const head = skinnedBox(0.38, 0.36, 0.34, face, fur); head.position.set(0, 0.95, 0.04);
+            const tail = khBox(0.07, 0.07, 0.6, fur); tail.position.set(0, 0.5, -0.4); tail.rotation.x = -0.9;
+            this.group.add(body, head, tail);
+            khLegs(this, fur, 0.12, 0.32, [[-0.11, 0.05], [0.11, 0.05]]);
+            [-0.26, 0.26].forEach(ax => { const a = khBox(0.1, 0.45, 0.1, fur); a.position.set(ax, 0.55, 0.05); this.group.add(a); });
+        }
+        updateAI(dt, player) {
+            this.stealCd -= dt;
+            const held = player.inventory.getSelectedSlot();
+            const d = this.pos.distanceTo(player.pos);
+            if (this.fleeT > 0) {
+                this.fleeT -= dt;
+                mobMgr.walkToward(this, new THREE.Vector3(2 * this.pos.x - player.pos.x, 0, 2 * this.pos.z - player.pos.z), 1.4);
+                return;
+            }
+            if (held && held.count > 0 && FOOD[held.type] && d < 7) {
+                if (d > 1.3) { mobMgr.walkToward(this, player.pos, 1.1); return; }
+                if (this.stealCd <= 0 && !isCreative()) {
+                    this.stealCd = 40; this.fleeT = 6;
+                    const t = held.type;
+                    player.inventory.consumeSelectedItem();
+                    showNotification(`ស្វាលួច${BLOCK_NAMES[t]}របស់អ្នក!`);
+                    return;
+                }
+            }
+            if (!(mobMgr.animalAI(this, dt, player, particleMgr))) khWander(this, dt);
+        }
+    }
+
+    // Bat: flutters about at night and in caves, harmless
+    class BatMob extends Mob {
+        constructor(x, y, z, scene) {
+            super('bat', x, y + 1.5, z, scene);
+            this.width = 0.4; this.height = 0.5; this.health = 6; this.speed = 2.2; this.noGravity = true;
+            this.flapT = 0; this.loot = null;
+        }
+        buildModel() {
+            const fur = khSkin('kh_bat_fur', [58, 44, 48], 551, 10), face = khFace('bat', [58, 44, 48], 553);
+            const body = skinnedBox(0.3, 0.3, 0.3, face, fur); body.position.set(0, 0.25, 0);
+            this.group.add(body);
+            this.wings = [-1, 1].map(sx => { const w = khBox(0.45, 0.04, 0.3, fur); w.position.set(sx * 0.35, 0.3, 0); this.group.add(w); return w; });
+        }
+        updateAI(dt, player, timeEngine, pm, world) {
+            this.flapT += dt * 18;
+            this.wings.forEach((w, i) => { w.rotation.z = Math.sin(this.flapT) * 0.7 * (i ? 1 : -1); });
+            this.moveTimer -= dt;
+            if (this.moveTimer <= 0) { this.moveTimer = 0.6 + Math.random() * 1.2; this.yaw = Math.random() * Math.PI * 2; this.vy = (Math.random() - 0.45) * 2.2; }
+            const ground = surfaceHeightAt(world, this.pos.x, this.pos.z, this.pos.y);
+            if (this.pos.y < ground + 1.5) this.vy = Math.abs(this.vy || 1);
+            if (this.pos.y > ground + 7) this.vy = -Math.abs(this.vy || 1);
+            this.vel.set(Math.sin(this.yaw) * this.speed, this.vy || 0, Math.cos(this.yaw) * this.speed);
+            this.isMoving = true;
+        }
+    }
+
+    // Crocodile: waits on river banks, fast in short bursts, hits hard
+    class CrocodileMob extends ZombieMob {
+        constructor(x, y, z, scene) {
+            super(x, y, z, scene);
+            this.type = 'crocodile';
+            this.width = 0.9; this.height = 0.6; this.health = 24; this.speed = 2.4; this.attackDamage = 5;
+            this.burnsInDaylight = false; this.loot = null;
+        }
+        buildModel() {
+            const GREEN = [74, 106, 52];
+            const hide = MobSkins.mat('kh_croc_hide', 8, 8, (px, w, hg) => {
+                MobSkins.mottle(GREEN, 561, 16)(px, w, hg);
+                for (let x = 0; x < w; x += 2) px(x, 0, 'rgb(52,80,36)');          // ridged back
+            });
+            const face = khFace('crocodile', GREEN, 563);
+            const body = khBox(0.7, 0.4, 1.7, hide); body.position.set(0, 0.32, 0);
+            const head = skinnedBox(0.5, 0.32, 0.5, face, hide); head.position.set(0, 0.34, 1.05);
+            const snout = khBox(0.36, 0.18, 0.5, hide); snout.position.set(0, 0.28, 1.5);
+            const tail = khBox(0.36, 0.26, 1.1, hide); tail.position.set(0, 0.28, -1.35);
+            this.group.add(body, head, snout, tail);
+            khLegs(this, hide, 0.18, 0.2, [[-0.42, 0.55], [0.42, 0.55], [-0.42, -0.55], [0.42, -0.55]]);
+            this.arms = [];
+        }
+    }
+    // Cobra: a small, quick snake with a spread hood, in forests and caves
+    class CobraMob extends ZombieMob {
+        constructor(x, y, z, scene) {
+            super(x, y, z, scene);
+            this.type = 'cobra';
+            this.width = 0.4; this.height = 0.7; this.health = 8; this.speed = 2.2; this.attackDamage = 3;
+            this.burnsInDaylight = false; this.loot = null;
+        }
+        buildModel() {
+            const DARK = [58, 58, 48];
+            const scale = khSkin('kh_cobra_scale', DARK, 571, 12), face = khFace('cobra', DARK, 573);
+            const coil = khBox(0.5, 0.18, 0.5, scale); coil.position.set(0, 0.09, 0);
+            const neck = khBox(0.14, 0.45, 0.14, scale); neck.position.set(0, 0.4, 0.1);
+            const hood = skinnedBox(0.4, 0.34, 0.08, face, scale); hood.position.set(0, 0.62, 0.14);
+            const tail = khBox(0.12, 0.12, 0.5, scale); tail.position.set(0.2, 0.06, -0.35);
+            this.group.add(coil, neck, hood, tail);
+            this.legs = []; this.arms = [];
+        }
+    }
+    // Ap: a floating ghost head trailing its entrails; flies at night, burns away at sunrise
+    class ApMob extends ZombieMob {
+        constructor(x, y, z, scene) {
+            super(x, y + 2, z, scene);
+            this.type = 'ap';
+            this.width = 0.5; this.height = 0.9; this.health = 16; this.speed = 2.6; this.attackDamage = 3;
+            this.noGravity = true; this.burnsInDaylight = true; this.loot = null;
+        }
+        buildModel() {
+            const SKIN = [216, 212, 200];
+            const face = khFace('ap', SKIN, 581), hair = new THREE.MeshLambertMaterial({ color: 0x0c0a0a });
+            const head = skinnedBox(0.5, 0.5, 0.5, face, hair); head.position.set(0, 0.6, 0);
+            this.group.add(head);
+            const gut = new THREE.MeshLambertMaterial({ color: 0xb02030, emissive: 0x300000 });
+            this.trail = [0, 1, 2].map(i => { const g = khBox(0.12, 0.25, 0.12, gut); g.position.set((i - 1) * 0.1, 0.2 - i * 0.18, -0.05 * i); this.group.add(g); return g; });
+            this.legs = []; this.arms = [];
+        }
+        updateAI(dt, player, timeEngine, pm, world) {
+            const target = player.pos.clone().add(new THREE.Vector3(0, 1.3, 0));
+            const d = target.distanceTo(this.pos);
+            this.yaw = Math.atan2(target.x - this.pos.x, target.z - this.pos.z);
+            const dir = target.clone().sub(this.pos).normalize();
+            this.vel.set(dir.x * this.speed, dir.y * this.speed, dir.z * this.speed);
+            if (!isSolid(world.getBlock(Math.floor(this.pos.x), Math.floor(this.pos.y + 1), Math.floor(this.pos.z))) && d > 12) this.vel.y += 0.4;
+            this.attackCd = Math.max(0, (this.attackCd || 0) - dt);
+            if (d < 1.3 && this.attackCd <= 0 && !player.dead) { this.attackCd = 1.2; player.takeDamage(this.attackDamage, 'zombie'); }
+            this.trail.forEach((g, i) => { g.rotation.z = Math.sin(performance.now() / 200 + i) * 0.4; });
+            this.isMoving = true;
+        }
+    }
+    // Shadow ghost: tall and dark; when hurt it vanishes and reappears a few blocks away; drops a naga pearl
+    class ShadowMob extends ZombieMob {
+        constructor(x, y, z, scene) {
+            super(x, y, z, scene);
+            this.type = 'shadow';
+            this.width = 0.6; this.height = 2.9; this.health = 40; this.speed = 2.2; this.attackDamage = 5;
+            this.burnsInDaylight = false; this.loot = null;
+        }
+        buildModel() {
+            const DARK = [26, 26, 32];
+            const body = khSkin('kh_shadow_body', DARK, 591, 10), face = khFace('shadow', DARK, 593);
+            const torso = khBox(0.5, 0.9, 0.3, body); torso.position.set(0, 2.0, 0);
+            const head = skinnedBox(0.5, 0.5, 0.5, face, body); head.position.set(0, 2.7, 0);
+            this.group.add(torso, head);
+            this.legs = [];
+            [-0.13, 0.13].forEach(lx => { const l = khBox(0.14, 1.55, 0.14, body); l.geometry.translate(0, -0.78, 0); l.position.set(lx, 1.55, 0); this.group.add(l); this.legs.push(l); });
+            this.arms = [];
+            [-0.33, 0.33].forEach(ax => {
+                const pivot = new THREE.Group(); pivot.position.set(ax, 2.4, 0);
+                const arm = khBox(0.12, 1.4, 0.12, body); arm.geometry.translate(0, -0.7, 0); pivot.add(arm);
+                this.group.add(pivot); this.arms.push(pivot);
+            });
+        }
+        takeDamage(amount, knockbackDir = null, source = 'attack') {
+            super.takeDamage(amount, knockbackDir, source);
+            if (this.isDead || Math.random() > 0.6) return;
+            for (let k = 0; k < 8; k++) {                                    // blink away
+                const nx = Math.floor(this.pos.x + (Math.random() - 0.5) * 16), nz = Math.floor(this.pos.z + (Math.random() - 0.5) * 16);
+                const ny = findSpawnSurface(world, nx, nz);
+                if (ny === null) continue;
+                for (let i = 0; i < 6; i++) particleMgr.spawnHeart(this.pos.x, this.pos.y + 1.5, this.pos.z);
+                this.pos.set(nx + 0.5, ny + 1, nz + 0.5);
+                break;
+            }
+        }
+    }
+    // A tame-able pet: right-click with its food
+    function tryTamePet(mob, slot) {
+        const food = mob.type === 'dog' ? BLOCK.BONE : mob.type === 'cat' ? BLOCK.RAW_FISH : null;
+        if (!food || !slot || slot.count <= 0 || slot.type !== food) return false;
+        if (mob.tamed) { mob.health = Math.min(20, mob.health + 4); }
+        else if (Math.random() < 0.34) { mob.tamed = true; mob.health = 20; showNotification(mob.type === 'dog' ? 'ឆ្កែក្លាយជារបស់អ្នក!' : 'ឆ្មាក្លាយជារបស់អ្នក!'); for (let i = 0; i < 6; i++) particleMgr.spawnHeart(mob.pos.x, mob.pos.y + mob.height, mob.pos.z); }
+        else { showNotification('វានៅតែខ្លាច... សាកម្ដងទៀត'); }
+        if (!isCreative()) player.inventory.consumeSelectedItem();
+        player.triggerSwing();
+        return true;
+    }
+    // Riding: right-click a saddled horse or elephant with an empty hand; Shift gets off
+    function tryMount(mob, slot) {
+        if (!mob.saddled || (slot && slot.count > 0 && slot.type === BLOCK.SADDLE) || player.riding) return false;
+        player.riding = mob;
+        mob.ridden = true;
+        player.pos.set(mob.pos.x, mob.pos.y, mob.pos.z);
+        showNotification('កំពុងជិះ៖ ចុច Shift ដើម្បីចុះ');
+        return true;
+    }
+    function updateRiding() {
+        const m = player.riding;
+        if (!m) return;
+        const k = player.lastKeys || {}, shift = k['ShiftLeft'] || k['ShiftRight'];
+        if (m.isDead || shift || player.dead || inEnd) { m.ridden = false; player.riding = null; return; }
+        m.pos.set(player.pos.x, player.pos.y, player.pos.z);
+        m.vel.set(0, 0, 0);
+        m.yaw = camera.rotation.y + Math.PI;
+        m.isMoving = Math.hypot(player.vel.x, player.vel.z) > 0.5;
+    }
+
+
+    // ==========================================
+    // PATALA (ឋានបាតាល): the naga underworld, reached through a naga gate (an obsidian frame lit with flint and steel).
+    // It lives far out in the world like the End: a red cave under a stone sky, lava lakes, hanging naga-gem lamps,
+    // ash sand, and at its heart the shrine where Reahu, the eclipse demon, waits. A naga gate by the arrival point leads home.
+    // ==========================================
+    const PATALA_X = -6000, PATALA_Z = 6000, PATALA_R = 110;
+    const PATALA_FLOOR = 8;
+    const PATALA_SPAWN = { x: PATALA_X + 0.5, y: PATALA_FLOOR + 2, z: PATALA_Z + 24.5 };
+    const patalaState = { defeated: false, bossUp: false };
+    function isPatalaRegion(wx, wz) { return Math.abs(wx - PATALA_X) < PATALA_R && Math.abs(wz - PATALA_Z) < PATALA_R; }
+    function patalaFloorAt(wx, wz) {
+        const n = simplex.noise2D(wx * 0.05, wz * 0.05) * 3 + simplex.noise2D(wx * 0.15 + 9, wz * 0.15) * 1.2;
+        return Math.max(3, Math.min(14, Math.round(PATALA_FLOOR + n)));
+    }
+    function generatePatalaChunk(chunk) {
+        const H = WORLD_HEIGHT;
+        for (let lx = 0; lx < CHUNK_SIZE_X; lx++) for (let lz = 0; lz < CHUNK_SIZE_Z; lz++) {
+            const wx = chunk.worldX + lx, wz = chunk.worldZ + lz;
+            const edge = Math.max(Math.abs(wx - PATALA_X), Math.abs(wz - PATALA_Z)) > PATALA_R - 4;
+            chunk.setBlock(lx, 0, lz, BLOCK.BEDROCK);
+            const ceil = H - 4 - Math.round(Math.abs(simplex.noise2D(wx * 0.11, wz * 0.11 + 40)) * 5);
+            if (edge) { for (let y = 1; y < H; y++) chunk.setBlock(lx, y, lz, BLOCK.PATALA_STONE); continue; }
+            const shrine = Math.hypot(wx - PATALA_X, wz - PATALA_Z) < 13;
+            const floor = shrine ? PATALA_FLOOR : patalaFloorAt(wx, wz);
+            const ash = simplex.noise2D(wx * 0.07 + 100, wz * 0.07) > 0.35;
+            for (let y = 1; y <= floor; y++) chunk.setBlock(lx, y, lz, y === floor && ash ? BLOCK.ASH_SAND : BLOCK.PATALA_STONE);
+            // lava lakes fill the low ground
+            if (!shrine) for (let y = floor + 1; y <= 6; y++) chunk.setBlock(lx, y, lz, BLOCK.LAVA);
+            for (let y = ceil; y < H; y++) chunk.setBlock(lx, y, lz, BLOCK.PATALA_STONE);
+            // stalactites, some tipped with glowing naga gems
+            const r = pseudoRandom(wx, wz, 811);
+            if (r < 0.06) {
+                const len = 2 + Math.floor(r * 60);
+                for (let k = 1; k <= len; k++) chunk.setBlock(lx, ceil - k, lz, k === len && r < 0.035 ? BLOCK.NAGA_GEM_LAMP : BLOCK.PATALA_STONE);
+            }
+            if (shrine) {                                              // Reahu's shrine: a laterite floor ringed with sandstone pillars
+                const d = Math.hypot(wx - PATALA_X, wz - PATALA_Z);
+                chunk.setBlock(lx, floor, lz, d < 4 ? BLOCK.GOLD_BLOCK : BLOCK.LATERITE);
+                if (Math.abs(d - 11) < 0.6 && (Math.round(Math.atan2(wz - PATALA_Z, wx - PATALA_X) * 4 / Math.PI) & 1) === 0) {
+                    for (let y = floor + 1; y < ceil; y++) chunk.setBlock(lx, y, lz, y === floor + 6 ? BLOCK.NAGA_GEM_LAMP : BLOCK.CARVED_SANDSTONE);
+                }
+            }
+        }
+        // The way home: a lit naga gate on a laterite platform by the arrival point
+        const gx = PATALA_X - 1, gz = PATALA_Z + 27, base = PATALA_FLOOR;
+        const put = (x, y, z, b) => { if (x >= chunk.worldX && x < chunk.worldX + CHUNK_SIZE_X && z >= chunk.worldZ && z < chunk.worldZ + CHUNK_SIZE_Z) chunk.setBlock(x - chunk.worldX, y, z - chunk.worldZ, b); };
+        for (let dx = -3; dx <= 4; dx++) for (let dz = -4; dz <= 3; dz++) {
+            put(gx + dx, base, gz + dz, BLOCK.LATERITE);
+            for (let y = base + 1; y <= base + 7; y++) put(gx + dx, y, gz + dz, BLOCK.AIR);
+        }
+        for (let i = -1; i <= 2; i++) { put(gx + i, base + 1, gz, BLOCK.OBSIDIAN); put(gx + i, base + 5, gz, BLOCK.OBSIDIAN); }
+        for (let j = 2; j <= 4; j++) { put(gx - 1, base + j, gz, BLOCK.OBSIDIAN); put(gx + 2, base + j, gz, BLOCK.OBSIDIAN); }
+        for (let i = 0; i <= 1; i++) for (let j = 2; j <= 4; j++) put(gx + i, base + j, gz, BLOCK.NAGA_GATE_X);
+    }
+    let inPatala = false;
+    // Through a naga gate: overworld -> Patala, or Patala -> back to the gate you came through
+    function travelThroughNagaGate() {
+        if (inEnd) return;
+        if (isPatalaRegion(player.pos.x, player.pos.z)) {
+            const back = player.gateReturn || { x: 0.5, y: null, z: 0.5 };
+            clearTransientEntities();
+            world.updateLoadedChunks(back.x, back.z, 2, scene);
+            if (back.y === null) player.respawnAtSurface();
+            else player.pos.set(back.x, back.y, back.z);
+            showNotification('អ្នកត្រឡប់មកពិភពលោកវិញ');
+        } else {
+            player.gateReturn = { x: player.pos.x + 1.5, y: player.pos.y + 0.2, z: player.pos.z + 1.5 };
+            // step out beside the gate, not into it
+            const gx = Math.floor(player.pos.x), gz = Math.floor(player.pos.z), gy = Math.floor(player.pos.y);
+            for (const [dx, dz] of [[0, 2], [0, -2], [2, 0], [-2, 0]]) {
+                if (!isSolid(world.getBlock(gx + dx, gy, gz + dz)) && !isSolid(world.getBlock(gx + dx, gy + 1, gz + dz)) && !isNagaGate(world.getBlock(gx + dx, gy, gz + dz))) {
+                    player.gateReturn = { x: gx + dx + 0.5, y: gy + 0.1, z: gz + dz + 0.5 }; break;
+                }
+            }
+            clearTransientEntities();
+            world.updateLoadedChunks(PATALA_SPAWN.x, PATALA_SPAWN.z, 2, scene);
+            player.pos.set(PATALA_SPAWN.x, PATALA_SPAWN.y, PATALA_SPAWN.z);
+            showToast({ icon: getToastIcon('info'), kind: 'night', key: 'patala', duration: 6000, title: 'ឋានបាតាល',
+                text: patalaState.defeated ? 'ឋានបាតាលស្ងប់ស្ងាត់ហើយ។' : 'រាហូរង់ចាំនៅទីសក្ការៈកណ្ដាល។', sub: 'ទ្វារនាគនៅក្បែរនេះនាំអ្នកទៅផ្ទះវិញ។' });
+        }
+        player.vel.set(0, 0, 0);
+        player.peakY = player.pos.y;
+        audio.playPortal();
+    }
+    // Patala's own monsters, and Reahu once the player comes near the shrine
+    let patalaSpawnTimer = 0;
+    function updatePatala(dt) {
+        inPatala = isPatalaRegion(player.pos.x, player.pos.z);
+        if (!inPatala || multiplayer.role === 'client') return;
+        patalaSpawnTimer -= dt;
+        if (patalaSpawnTimer <= 0) {
+            patalaSpawnTimer = 4;
+            if (mobMgr.mobs.filter(m => m.isHostile).length < 6) {
+                const a = Math.random() * Math.PI * 2, d = 14 + Math.random() * 14;
+                const sx = Math.floor(player.pos.x + Math.cos(a) * d), sz = Math.floor(player.pos.z + Math.sin(a) * d);
+                if (world.getChunkAtWorld(sx, sz)) {
+                    for (let y = 14; y > 6; y--) {
+                        const b = world.getBlock(sx, y, sz);
+                        if ((b === BLOCK.PATALA_STONE || b === BLOCK.ASH_SAND) && world.getBlock(sx, y + 1, sz) === BLOCK.AIR && world.getBlock(sx, y + 2, sz) === BLOCK.AIR) {
+                            const r = Math.random();
+                            mobMgr.mobs.push(r < 0.4 ? new ShadowMob(sx + 0.5, y + 1, sz + 0.5, scene) : r < 0.7 ? new CobraMob(sx + 0.5, y + 1, sz + 0.5, scene) : new ApMob(sx + 0.5, y + 1, sz + 0.5, scene));
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        const nearShrine = Math.hypot(player.pos.x - PATALA_X, player.pos.z - PATALA_Z) < 30;
+        if (nearShrine && !patalaState.defeated && !mobMgr.mobs.some(m => m.type === 'reahu' && !m.isDead)) {
+            mobMgr.mobs.push(new ReahuMob(PATALA_X + 0.5, PATALA_FLOOR + 4, PATALA_Z + 0.5, scene));
+            showToast({ icon: getToastIcon('danger'), kind: 'warn', key: 'reahu', duration: 5000, title: 'រាហូបានភ្ញាក់!', text: 'បិសាចស៊ីព្រះចន្ទ ការពារខ្លួន!' });
+        }
+        updateBossBar();
+    }
+    // Reahu: a giant crowned head with two hands and no body, holding the moon. It floats around the shrine,
+    // throws dark orbs, and slams down when you come close. 300 health.
+    class ReahuMob extends ZombieMob {
+        constructor(x, y, z, scene) {
+            super(x, y, z, scene);
+            this.type = 'reahu';
+            this.width = 2.2; this.height = 3.2; this.health = 300; this.maxHealth = 300; this.speed = 1.6; this.attackDamage = 7;
+            this.noGravity = true; this.burnsInDaylight = false; this.isBoss = true; this.loot = null;
+            this.orbCd = 2; this.t = 0;
+        }
+        buildModel() {
+            const SKIN = [46, 42, 100];
+            const skin = MobSkins.mat('kh_reahu_skin', 8, 8, MobSkins.mottle(SKIN, 601, 14));
+            const face = MobSkins.mat('new_reahu_face', 8, 8, MobSkins.mottle(SKIN, 603, 8));
+            const gold = new THREE.MeshLambertMaterial({ color: 0xf2c64a, emissive: 0x2a1a00 });
+            const head = skinnedBox(2.0, 2.0, 1.8, face, skin); head.position.set(0, 1.8, 0);
+            const crown1 = khBox(1.6, 0.3, 1.4, gold); crown1.position.set(0, 2.95, 0);
+            const crown2 = khBox(1.0, 0.4, 0.9, gold); crown2.position.set(0, 3.3, 0);
+            const crown3 = khBox(0.4, 0.5, 0.4, gold); crown3.position.set(0, 3.7, 0);
+            this.group.add(head, crown1, crown2, crown3);
+            this.hands = [-1, 1].map(sx => { const h = khBox(0.7, 0.5, 0.8, skin); h.position.set(sx * 1.6, 0.9, 0.6); this.group.add(h); return h; });
+            const moon = khBox(0.8, 0.8, 0.8, new THREE.MeshLambertMaterial({ color: 0xe8ecf8, emissive: 0x606878 })); moon.position.set(0, 0.5, 1.0);
+            this.group.add(moon);
+            this.legs = []; this.arms = [];
+        }
+        updateAI(dt, player, timeEngine, pm, world) {
+            this.t += dt;
+            const home = new THREE.Vector3(PATALA_X + 0.5, PATALA_FLOOR + 3.5, PATALA_Z + 0.5);
+            const d = this.pos.distanceTo(player.pos);
+            // circle the shrine, drifting toward the player
+            const ang = this.t * 0.35;
+            const want = home.clone().add(new THREE.Vector3(Math.cos(ang) * 6, Math.sin(this.t * 0.8) * 1.2, Math.sin(ang) * 6));
+            if (d < 18) want.lerp(player.pos.clone().add(new THREE.Vector3(0, 2.5, 0)), 0.35);
+            const dir = want.sub(this.pos);
+            this.vel.set(dir.x * 0.9, dir.y * 0.9, dir.z * 0.9);
+            this.yaw = Math.atan2(player.pos.x - this.pos.x, player.pos.z - this.pos.z);
+            this.hands.forEach((h, i) => { h.position.y = 0.9 + Math.sin(this.t * 3 + i * 2) * 0.25; });
+            this.orbCd -= dt;
+            if (this.orbCd <= 0 && d < 28 && !player.dead) {
+                this.orbCd = this.health < 150 ? 1.2 : 2.0;                  // angrier when hurt
+                const from = this.pos.clone().add(new THREE.Vector3(0, 1.8, 0));
+                mobMgr.spawnArrow(from, player.pos.clone().add(new THREE.Vector3(0, 1, 0)), { speed: 14, spread: 0.08 });
+                const orb = mobMgr.arrows[mobMgr.arrows.length - 1];
+                if (orb) { orb.mesh.material = new THREE.MeshBasicMaterial({ color: 0x3a1a6a }); orb.mesh.scale.set(5, 5, 0.8); }
+            }
+            this.attackCd = Math.max(0, (this.attackCd || 0) - dt);
+            if (d < 3 && this.attackCd <= 0 && !player.dead) { this.attackCd = 1.5; player.takeDamage(this.attackDamage, 'zombie'); }
+            this.isMoving = true;
+        }
+        die(killed = false) {
+            const was = this.isDead;
+            super.die(killed);
+            if (was || !killed) return;
+            patalaState.defeated = true;
+            [[BLOCK.NAGA_PEARL, 3], [BLOCK.GOLDEN_MANGO, 2], [BLOCK.SAPPHIRE_BLOCK, 1], [BLOCK.PALM_LEAF_BOOK, 2]].forEach(([type, count]) =>
+                pendingMobLoot.push({ type, count, x: this.pos.x, y: this.pos.y, z: this.pos.z, xp: 0 }));
+            player.addXP(60);
+            showToast({ icon: getToastIcon('info'), kind: 'unlock', key: 'reahu-down', duration: 7000, title: 'ជ័យជម្នះ!', text: 'អ្នកបានឈ្នះរាហូ។ ព្រះចន្ទត្រូវបានរំដោះ!' });
+        }
+    }
+    let bossBarEl = null;
+    function updateBossBar() {
+        const boss = mobMgr.mobs.find(m => m.isBoss && !m.isDead && m.pos.distanceTo(player.pos) < 60);
+        if (!bossBarEl) {
+            bossBarEl = document.createElement('div');
+            bossBarEl.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);width:min(420px,70vw);z-index:30;display:none;text-align:center;' +
+                'font:15px "Kantumruy Pro",sans-serif;color:#f4ead2;text-shadow:0 1px 2px #000;pointer-events:none';
+            bossBarEl.innerHTML = '<div>រាហូ · បិសាចស៊ីព្រះចន្ទ</div><div style="height:10px;border:2px solid #1a120e;background:#3a0a1a;margin-top:4px"><div style="height:100%;background:linear-gradient(#b040e0,#6a20a0);width:100%"></div></div>';
+            document.body.appendChild(bossBarEl);
+        }
+        bossBarEl.style.display = boss ? 'block' : 'none';
+        if (boss) bossBarEl.lastChild.firstChild.style.width = Math.max(0, boss.health / boss.maxHealth * 100) + '%';
     }
 
     class MobManager {
@@ -8568,7 +9436,9 @@ const BLOCK = {
                 }
 
                 // AI updates
-                if (mob.updateAI) {
+                if (mob.ridden) {
+                    // carried along by the player in updateRiding
+                } else if (mob.updateAI) {
                     if (!mob.isHostile) mob.updateAI(dt, player, timeEngine, particleMgr, world);
                 } else if (mob.breedFood && this.animalAI(mob, dt, player, particleMgr)) {
                     // following food, looking for a partner, or growing up: handled in animalAI
@@ -8594,7 +9464,7 @@ const BLOCK = {
                 mob.tickIdle(dt);
 
                 // Despawn very distant mobs
-                if (mob.pos.distanceTo(player.pos) > 65.0) {
+                if (mob.pos.distanceTo(player.pos) > 65.0 && !mob.tamed && !mob.saddled && !mob.leashed && !mob.isBoss) {
                     mob.die();
                     this.mobs.splice(i, 1);
                 }
@@ -8729,8 +9599,9 @@ const BLOCK = {
                 if (!canMonsterSpawnOn(surface)) return;                         // lower slabs and anything but open grass
                 if (blockLightAt(sx, sy + 1, sz) > 0) return;                    // Khmer edition: monsters only spawn where block light is 0
                 const r = Math.random();
-                let monster;
-                if (r < 0.23) monster = new CreeperMob(sx + 0.5, sy + 1, sz + 0.5, this.scene);      // only lightning charges a creeper
+                let monster = khNightMonster(world, sx, sy, sz, this.scene);
+                if (monster) { /* a Khmer content v2 monster */ }
+                else if (r < 0.23) monster = new CreeperMob(sx + 0.5, sy + 1, sz + 0.5, this.scene);      // only lightning charges a creeper
                 else if (r < 0.44) monster = new SkeletonMob(sx + 0.5, sy + 1, sz + 0.5, this.scene);
                 else if (r < 0.70) monster = new ZombieMob(sx + 0.5, sy + 1, sz + 0.5, this.scene);
                 else if (r < 0.82) monster = new SpiderMob(sx + 0.5, sy + 1, sz + 0.5, this.scene);
@@ -8741,8 +9612,9 @@ const BLOCK = {
                 this.mobs.push(monster);
             } else if (!isNight && activePassives < 12 && surface === BLOCK.GRASS) {
                 const r = Math.random();
-                let animal;
-                if (r < 0.24) animal = new ChickenMob(sx + 0.5, sy + 1, sz + 0.5, this.scene);
+                let animal = khDayAnimal(world, sx, sy, sz, this.scene);
+                if (animal) { /* a Khmer content v2 animal */ }
+                else if (r < 0.24) animal = new ChickenMob(sx + 0.5, sy + 1, sz + 0.5, this.scene);
                 else if (r < 0.44) animal = new PigMob(sx + 0.5, sy + 1, sz + 0.5, this.scene);
                 else if (r < 0.64) animal = new CowMob(sx + 0.5, sy + 1, sz + 0.5, this.scene);
                 else if (r < 0.86) animal = new SheepMob(sx + 0.5, sy + 1, sz + 0.5, this.scene);
@@ -8752,6 +9624,30 @@ const BLOCK = {
         }
     }
 
+    // Khmer content v2 spawns: crocodiles by the water, the Ap and the shadow ghost anywhere at night, cobras in the forest;
+    // by day buffalo by the water, elephants and monkeys in the forest, dogs and cats around villages, bats at dusk
+    function khNearWater(world, x, y, z) {
+        for (const [dx, dz] of [[2, 0], [-2, 0], [0, 2], [0, -2], [1, 1], [-1, -1]]) for (const dy of [0, -1]) if (world.getBlock(x + dx, y + dy, z + dz) === BLOCK.WATER) return true;
+        return false;
+    }
+    function khNightMonster(world, x, y, z, scene) {
+        const r = Math.random(), X = x + 0.5, Y = y + 1, Z = z + 0.5;
+        if (khNearWater(world, x, y, z) && r < 0.5) return new CrocodileMob(X, Y, Z, scene);
+        if (r < 0.07) return new ApMob(X, Y, Z, scene);
+        if (r < 0.12) return new ShadowMob(X, Y, Z, scene);
+        if (r < 0.2 && getBiome(x, z) === 'Forest') return new CobraMob(X, Y, Z, scene);
+        if (r < 0.24 && mobMgr.mobs.filter(m => m.type === 'bat').length < 3) return new BatMob(X, Y, Z, scene);
+        return null;
+    }
+    function khDayAnimal(world, x, y, z, scene) {
+        const r = Math.random(), X = x + 0.5, Y = y + 1, Z = z + 0.5, forest = getBiome(x, z) === 'Forest';
+        if (khNearWater(world, x, y, z) && r < 0.45) return new BuffaloMob(X, Y, Z, scene);
+        if (villagesNear(x, z, 40).length && r < 0.3) return r < 0.18 ? new DogMob(X, Y, Z, scene) : new CatMob(X, Y, Z, scene);
+        if (forest && r < 0.12) return new ElephantMob(X, Y, Z, scene);
+        if (forest && r < 0.3) return new MonkeyMob(X, Y, Z, scene);
+        if (r < 0.06) return new BuffaloMob(X, Y, Z, scene);
+        return null;
+    }
     // ---------- Spawn rules ----------
     // The y of the first real block straight down from the sky at (x, z): air, flowers, tall grass and torches are skipped,
     // anything else (a roof, a slab, leaves, water) is the surface. Returns null when there is no room for a mob on it
@@ -9399,6 +10295,7 @@ const BLOCK = {
                 amount = Math.max(1, Math.round(amount * (1 - share)));
             }
             this.invuln = 0.55;
+            if (this.yantraTimer > 0 && source !== 'void') amount = Math.max(1, Math.round(amount * 0.7));      // the yantra blessing protects
             let finalDmg = amount;
             if (source !== 'drowning' && source !== 'starvation' && source !== 'void' && source !== 'fall') {
                 finalDmg = Math.max(1, Math.round(amount * (1 - armorReduction())));
@@ -9427,6 +10324,7 @@ const BLOCK = {
 
         canEat(blockType, quiet = false) {
             if (!FOOD[blockType]) return false;
+            if (FOOD[blockType].always) return true;
             if (this.hunger >= this.maxHunger && this.health >= this.maxHealth) {
                 if (!quiet) showNotification('អ្នកឆ្អែតហើយ!');
                 return false;
@@ -9438,6 +10336,7 @@ const BLOCK = {
             if (!food || !this.canEat(blockType)) return false;
             this.hunger = Math.min(this.maxHunger, this.hunger + food.hunger);
             this.health = Math.min(this.maxHealth, this.health + food.hp);
+            if (food.milk) { this.speedBoost = 0; this.yantraTimer = 0; showNotification('ទឹកដោះគោលុបឥទ្ធិពលទាំងអស់'); }
             if (food.speed) {                                              // Khmer edition: palm juice
                 this.speedBoost = food.speed;
                 showNotification(`ទឹកត្នោតផ្ដល់ថាមពល៖ រត់លឿនជាងមុន ${food.speed} វិនាទី`);
@@ -9633,11 +10532,11 @@ const BLOCK = {
                         // A solid 3D model of the item picture (see extrudedItemGeometry), posed like Minecraft's hand:
                         // tools and swords angled with the head up toward the middle of the screen, other items more upright
                         const m = this.heldSpriteMesh;
-                        m.geometry = extrudedItemGeometry(getBlockFaceTile(curSlot.type, 'side'));
+                        m.geometry = extrudedItemGeometry(getItemIconTile(curSlot.type));
                         m.material = curSlot.type === BLOCK.TORCH ? this.heldGlowMat : this.heldSpriteMat;
                         if (curSlot.type === BLOCK.BOW) {
                             // posed every frame below (it moves as you draw)
-                        } else if (TOOLS[curSlot.type]) {
+                        } else if (TOOLS[curSlot.type] && ['pickaxe', 'axe', 'shovel', 'hoe', 'sword', 'rod', 'crossbow'].includes(TOOLS[curSlot.type].kind)) {
                             // turned around so we see the back of the picture (its mirror image): handle bottom right,
                             // head up toward the crosshair. (A negative scale would mirror it too but break its lighting.)
                             m.position.set(0.25, -0.19, -0.55);
@@ -9659,7 +10558,7 @@ const BLOCK = {
                 const glint = this.heldGlintMesh;
                 glint.visible = flat && !overlayHand && hasMaterialSheen(curSlot.type);
                 if (glint.visible) {
-                    const sheenGeo = extrudedItemGeometry(getBlockFaceTile(curSlot.type, 'side'), true);     // material pixels only
+                    const sheenGeo = extrudedItemGeometry(getItemIconTile(curSlot.type), true);     // material pixels only
                     if (glint.geometry !== sheenGeo) glint.geometry = sheenGeo;
                     this.glintTexture.offset.x = (this.glintTexture.offset.x + dt * 0.25) % 1;
                     this.glintTexture.offset.y = (this.glintTexture.offset.y + dt * 0.1) % 1;
@@ -9686,13 +10585,15 @@ const BLOCK = {
             }
             if (this.isSwinging) {
                 this.swingProgress += dt * 6.5;
-                // Chopping arc: wind up, strike forward/down, return
-                const swingAngle = Math.sin(this.swingProgress * Math.PI);
-                const strike = Math.sin(Math.min(1, this.swingProgress) * Math.PI * 0.5);
-                this.handGroup.rotation.x = -swingAngle * 0.95;
-                this.handGroup.rotation.y = swingAngle * 0.35;
-                this.handGroup.rotation.z = -strike * swingAngle * 0.25;
-                this.handGroup.position.set(-swingAngle * 0.04, -swingAngle * 0.1, -swingAngle * 0.2);
+                // Chopping arc that stays on screen: the item swings in toward the crosshair, its head dipping onto the
+                // target, then comes back. (A big pitch around the camera used to throw it out of view mid-swing.)
+                const p = Math.min(1, this.swingProgress);
+                const swingAngle = Math.sin(p * Math.PI);                                   // out to the crosshair and back
+                const dip = p > 0.3 ? Math.sin((p - 0.3) / 0.7 * Math.PI) : 0;             // the head comes down onto the target
+                this.handGroup.rotation.x = swingAngle * 0.15 - dip * 0.3;
+                this.handGroup.rotation.y = swingAngle * 0.45;
+                this.handGroup.rotation.z = swingAngle * 0.2;
+                this.handGroup.position.set(-swingAngle * 0.14, swingAngle * 0.06 - dip * 0.04, 0);
                 if (this.swingProgress >= 1.0) {
                     this.isSwinging = false;
                     this.handGroup.rotation.set(0, 0, 0);
@@ -9782,6 +10683,7 @@ const BLOCK = {
         }
 
         updatePhysics(dt, inputKeys) {
+            this.lastKeys = inputKeys;
             if (this.boat) { this.updateBoatRide(dt, inputKeys); return; }
             const feetBlock = this.world.getBlock(Math.floor(this.pos.x), Math.floor(this.pos.y + 0.1), Math.floor(this.pos.z));
             const headBlock = this.world.getBlock(Math.floor(this.pos.x), Math.floor(this.pos.y + this.eyeHeight), Math.floor(this.pos.z));
@@ -9820,6 +10722,8 @@ const BLOCK = {
             if (this.speedBoost > 0) { this.speedBoost = Math.max(0, this.speedBoost - dt); if (!flying) targetSpeed *= 1.3; }
             if (this.inWater && !flying) targetSpeed *= 0.55;
             if (eatState.active) targetSpeed *= 0.35;               // you walk slowly while eating
+            if (this.riding) targetSpeed *= this.riding.rideSpeed || 1.6;     // riding a horse or an elephant
+            if (!flying && this.world.getBlock(Math.floor(this.pos.x), Math.floor(this.pos.y - 0.1), Math.floor(this.pos.z)) === BLOCK.ASH_SAND) targetSpeed *= 0.5;
 
             const baseFov = GameOptions.fov;
             const bowZoom = itemUse.mode === 'bow' ? 1 - 0.15 * Math.min(1, itemUse.t / BOW_DRAW_TIME) : 1;   // drawing a bow zooms in to aim
@@ -9840,6 +10744,12 @@ const BLOCK = {
                 this.vel.y -= 7.0 * dt;
                 if (this.vel.y < -3.5) this.vel.y = -3.5;
                 if (inputKeys['Space']) this.vel.y = 3.8;
+            } else if (khPlayerOnLadder(this)) {
+                // Ladder: forward or Space climbs, Shift holds on, otherwise you slide down slowly (no fall damage)
+                const up = inputKeys['KeyW'] || inputKeys['Space'];
+                const hold = inputKeys['ShiftLeft'] || inputKeys['ShiftRight'];
+                this.vel.y = up ? 3.2 : (hold ? 0 : -2.2);
+                this.peakY = this.pos.y;
             } else {
                 this.vel.y -= 26.0 * dt;
                 if (this.vel.y < -36.0) this.vel.y = -36.0;
@@ -9976,7 +10886,7 @@ const BLOCK = {
                 }
             }
 
-            this.camera.position.set(this.pos.x, this.pos.y + this.eyeHeight - (this.stepOffset || 0), this.pos.z);
+            this.camera.position.set(this.pos.x, this.pos.y + this.eyeHeight - (this.stepOffset || 0) + (this.riding ? (this.riding.rideEye || 1.0) : 0), this.pos.z);
             this.updateHand(dt);
 
             if (this.pos.y < -4.0) {
@@ -10801,7 +11711,7 @@ const BLOCK = {
                         point: at(fh.t)
                     };
                 }
-            } else if (isSolid(block) || isDoor(block) || (includeWater && block === BLOCK.WATER)) {
+            } else if (isSolid(block) || isDoor(block) || (includeWater && (block === BLOCK.WATER || block === BLOCK.LAVA))) {
                 return {
                     hit: true,
                     bx: x, by: y, bz: z,
@@ -11605,6 +12515,7 @@ const BLOCK = {
             guests: multiplayer.guestData,
             edits,
             chests: [...chests].filter(([, c]) => c.some(sl => sl.count > 0)).map(([k, c]) => [k, c.map(sl => sl.count > 0 ? [sl.type, sl.count, sl.dmg || 0] : 0)]),
+            patala: { defeated: patalaState.defeated },
             boats: boats.map(b => [+b.pos.x.toFixed(2), +b.pos.y.toFixed(2), +b.pos.z.toFixed(2), +b.yaw.toFixed(2)]),
             furnaces: [...furnaces].map(([k, f]) => [k, [f.in.type, f.in.count], [f.fuel.type, f.fuel.count], [f.out.type, f.out.count], f.burn, f.burnMax, f.prog]),
             end: endMgr ? {
@@ -11668,6 +12579,7 @@ const BLOCK = {
         applyPlayerState(data);
         multiplayer.guestData = data.guests && typeof data.guests === 'object' ? data.guests : {};
         if (data.end) Object.assign(endProgress, data.end);
+        patalaState.defeated = !!(data.patala && data.patala.defeated);
         clearBoats();
         for (const row of (Array.isArray(data.boats) ? data.boats : [])) {
             if (!Array.isArray(row) || !row.slice(0, 4).every(Number.isFinite)) continue;
@@ -12256,6 +13168,54 @@ const BLOCK = {
         RECIPES.push({ pattern: ['MM', 'MS', ' S'], key: { M: mat, S: BLOCK.STICK }, out: [axe, 1] });
         RECIPES.push({ pattern: ['M', 'S', 'S'], key: { M: mat, S: BLOCK.STICK }, out: [shovel, 1] });
     });
+
+
+    // ---- Khmer content v2 recipes (they also show in the recipe book) ----
+    (function addKhRecipes() {
+        const B = BLOCK;
+        const R = (pattern, key, out, n = 1) => RECIPES.push({ pattern, key, out: [out, n] });
+        const S = (list, out, n = 1) => RECIPES.push({ shapeless: list, out: [out, n] });
+        R(['B B', 'BBB', 'B B'], { B: B.BAMBOO }, B.LADDER, 3);
+        R(['SPS', 'SPS'], { S: B.STICK, P: B.WOOD_PLANKS }, B.FENCE_GATE, 1);
+        R(['LLL', 'LLL'], { L: B.LATERITE }, B.LATERITE_WALL, 6);
+        R(['PPP', 'PPP'], { P: B.WOOD_PLANKS }, B.TRAPDOOR, 2);
+        STAIR_DEFS.slice(1).forEach(d => R(['M  ', 'MM ', 'MMM'], { M: d.craft }, d.item, 4));
+        S([B.SAND, B.DIRT], B.CLAY, 2);
+        S([B.COBBLESTONE, B.BONE_MEAL], B.MOSSY_COBBLESTONE, 1);
+        R(['WWW', 'WWW', 'WWW'], { W: B.WHEAT }, B.RICE_STRAW, 1);
+        S([B.RICE_STRAW], B.WHEAT, 9);
+        R(['PPP', 'BBB', 'PPP'], { P: B.WOOD_PLANKS, B: B.PALM_LEAF_BOOK }, B.PALM_LEAF_SHELF, 1);
+        R([' B ', 'DOD', 'OOO'], { B: B.PALM_LEAF_BOOK, D: B.DIAMOND, O: B.OBSIDIAN }, B.YANTRA_TABLE, 1);
+        [['GOLD_BLOCK', 'GOLD_INGOT'], ['IRON_BLOCK', 'IRON_INGOT'], ['BRONZE_BLOCK', 'BRONZE_INGOT'], ['DIAMOND_BLOCK', 'DIAMOND'], ['SAPPHIRE_BLOCK', 'SAPPHIRE']].forEach(([blk, mat]) => {
+            R(['MMM', 'MMM', 'MMM'], { M: B[mat] }, B[blk], 1);
+            S([B[blk]], B[mat], 9);
+        });
+        R(['GSG', 'SGS', 'GSG'], { G: B.GUNPOWDER, S: B.SAND }, B.FIRECRACKER_KEG, 1);
+        R([' S ', 'SCS', 'LLL'], { S: B.STICK, C: B.COAL, L: B.WOOD_LOG }, B.CAMPFIRE, 1);
+        R(['T T', 'T T', 'TTT'], { T: B.ROOF_TILE }, B.WATER_JAR, 1);
+        R(['TBT', 'CCC'], { T: B.ROOF_TILE, B: B.BOTTLE, C: B.COBBLESTONE }, B.HERBAL_POT, 1);
+        R(['BBB', ' I ', 'III'], { B: B.IRON_BLOCK, I: B.IRON_INGOT }, B.ANVIL, 1);
+        R(['PPP', 'PPP', ' S '], { P: B.WOOD_PLANKS, S: B.STICK }, B.SIGN, 3);
+        R(['P P', 'PCP'], { P: B.WOOD_PLANKS, C: B.CHEST }, B.OX_CART, 1);
+        S([B.IRON_INGOT, B.FLINT], B.FLINT_AND_STEEL, 1);
+        R([' I', 'I '], { I: B.IRON_INGOT }, B.SHEARS, 1);
+        R(['  B', ' BS', 'B S'], { B: B.BAMBOO, S: B.STRING }, B.FISHING_ROD, 1);
+        R([' I ', 'ICI', ' I '], { I: B.IRON_INGOT, C: B.COAL }, B.COMPASS, 1);
+        R([' G ', 'GCG', ' G '], { G: B.GOLD_INGOT, C: B.COAL }, B.CLOCK, 1);
+        R(['PPP', 'PCP', 'PPP'], { P: B.PAPER, C: B.COMPASS }, B.MAP, 1);
+        R(['BBB'], { B: B.BAMBOO }, B.PAPER, 3);
+        S([B.PAPER, B.PAPER, B.PAPER, B.LEATHER], B.PALM_LEAF_BOOK, 1);
+        S([B.PALM_SUGAR], B.SUGAR, 2);
+        R(['GGG', 'GMG', 'GGG'], { G: B.GOLD_INGOT, M: B.MANGO }, B.GOLDEN_MANGO, 1);
+        S([B.BAMBOO, B.WHEAT, B.COCONUT], B.KRALAN, 2);
+        S([B.WATERMELON], B.WATERMELON_SLICE, 5);
+        S([B.PUMPKIN, B.SUGAR, B.EGG], B.SANKHYA_LAPOV, 1);
+        R(['SIS', 'WSW', ' S '], { S: B.STICK, I: B.IRON_INGOT, W: B.STRING }, B.CROSSBOW, 1);
+        S([B.PAPER, B.GUNPOWDER], B.FIREWORK, 3);
+        R(['SS ', 'SS ', '  S'], { S: B.STRING }, B.ROPE, 2);
+        R(['LLL', 'LIL'], { L: B.LEATHER, I: B.IRON_INGOT }, B.SADDLE, 1);
+        R(['F', 'S', 'R'], { F: B.FLINT, S: B.STICK, R: B.FEATHER }, B.ARROW, 4);
+    })();
 
     // Trim the grid to its bounding box and compare against every recipe
     function matchRecipe(grid, size) {
@@ -13503,6 +14463,14 @@ const BLOCK = {
         [BLOCK.END_PORTAL]:       { name: 'ទ្វារទីបញ្ចប់',       rarity: 'Epic',     description: 'ដើរចូលដើម្បីធ្វើដំណើរទៅពិភពទីបញ្ចប់។' },
     };
 
+
+    // Khmer content v2: names and descriptions for the tooltips, and a few new villager trades
+    Object.values(KH).forEach(def => {
+        if (def.kind === 'state' || def.noItem) return;
+        ITEM_INFO[def.id] = { name: def.name, rarity: def.rarity || 'Common', description: def.info || '' };
+    });
+    STAIR_DEFS.slice(1).forEach(d => { ITEM_INFO[d.item] = { name: d.name, rarity: 'Common', description: KH[d.icon] ? KH[d.icon].info : '' }; });
+
     // ==========================================
     // ITEM_REGISTRY: one visual record per item (id, name, sprite, emoji fallback, tier, kind)
     // Every texture in this game is drawn at runtime into the atlas, so `spriteUrl` resolves to that
@@ -13899,7 +14867,8 @@ const BLOCK = {
     }
 
     const MONSTER_NAMES = { creeper: 'ខ្មោចផ្ទុះ', skeleton: 'គ្រោងឆ្អឹង', zombie: 'ខ្មោចឆៅ', spider: 'ពីងពាង',
-        yeak: 'យក្សព្រៃភ្នំ', preay: 'ខ្មោចព្រាយ', tiger: 'ខ្លាធំ' };
+        yeak: 'យក្សព្រៃភ្នំ', preay: 'ខ្មោចព្រាយ', tiger: 'ខ្លាធំ', crocodile: 'ក្រពើ', cobra: 'ពស់វែក', ap: 'អាប', shadow: 'ខ្មោចស្រមោល', reahu: 'រាហូ',
+        buffalo: 'ក្របី', elephant: 'ដំរី', dog: 'ឆ្កែ', cat: 'ឆ្មា', monkey: 'ស្វា', bat: 'ប្រចៀវ', horse: 'សេះ', cow: 'គោ', pig: 'ជ្រូក', sheep: 'ចៀម', chicken: 'មាន់' };
     let threatTimer = 0, threatCooldown = 0;
     function updateThreatWarnings(dt) {
         threatCooldown = Math.max(0, threatCooldown - dt);
@@ -14089,7 +15058,7 @@ const BLOCK = {
         }
         // Daylight: 1 with the sun well up, 0 once it is below the horizon; rock overhead cancels it out
         const sunUp = Math.max(0, Math.min(1, (timeEngine.sunDir.y + 0.05) / 0.3));
-        const target = inEnd ? 1 : 1 - sunUp * (1 - caveDarkness);
+        const target = (inEnd || inPatala) ? 1 : 1 - sunUp * (1 - caveDarkness);
         torchDarkness += (target - torchDarkness) * Math.min(1, dt * 2);
         const k = torchDarkness;
         BLOCK_LIGHT_UNIFORM.value = 0.15 + 1.75 * k;           // faint by day, strong at night and underground
@@ -14139,7 +15108,7 @@ const BLOCK = {
         return false;
     }
     function applyCaveDarkness(dt) {
-        if (inEnd) { caveDarkness = 0; return; }
+        if (inEnd || inPatala) { caveDarkness = 0; return; }
         caveScanTimer -= dt;
         if (caveScanTimer <= 0) {
             caveScanTimer = 0.25;
@@ -14508,24 +15477,34 @@ const BLOCK = {
 
         buildModel() {
             this.mats = {
-                body: new THREE.MeshLambertMaterial({ color: 0x2c2838, emissive: 0x120d1c }),
-                accent: new THREE.MeshLambertMaterial({ color: 0x6a4a90, emissive: 0x2a1a40 }),
-                wing: new THREE.MeshLambertMaterial({ color: 0x4a3470, emissive: 0x1e1236, side: THREE.DoubleSide }),
-                eye: new THREE.MeshBasicMaterial({ color: 0xe45cff })
+                // Khmer edition: the Naga king, green scales and a golden belly and crest
+                body: new THREE.MeshLambertMaterial({ color: 0x2f7a4c, emissive: 0x0a2414 }),
+                accent: new THREE.MeshLambertMaterial({ color: 0xd8b04a, emissive: 0x3a2a08 }),
+                wing: new THREE.MeshLambertMaterial({ color: 0x43985e, emissive: 0x12301c, side: THREE.DoubleSide }),
+                eye: new THREE.MeshBasicMaterial({ color: 0xff3a2a })
             };
             const m = this.mats;
             const box = (w, h, d, mat) => new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
             this.group = new THREE.Group();
             this.scene.add(this.group);
 
+            // Seven hooded heads fanned out like the naga balustrades of Angkor Wat, a golden flame crest above the middle one
             this.head = new THREE.Group();
             this.head.add(box(1.7, 1.2, 2.0, m.body));
-            const snout = box(1.1, 0.7, 1.3, m.body); snout.position.set(0, -0.15, 1.5); this.head.add(snout);
-            const jaw = box(0.95, 0.3, 1.5, m.accent); jaw.position.set(0, -0.62, 1.1); this.head.add(jaw);
-            [-1, 1].forEach(side => {
-                const horn = box(0.25, 0.8, 0.25, m.accent); horn.position.set(side * 0.6, 0.95, -0.3); horn.rotation.x = -0.4; this.head.add(horn);
-                const eye = box(0.12, 0.25, 0.45, m.eye); eye.position.set(side * 0.87, 0.2, 0.55); this.head.add(eye);
-            });
+            const belly = box(1.2, 0.3, 1.6, m.accent); belly.position.set(0, -0.62, 0.2); this.head.add(belly);
+            for (let k = -3; k <= 3; k++) {
+                const h = new THREE.Group();
+                const a = k * 0.42;
+                h.position.set(Math.sin(a) * 1.5, 0.6 + Math.cos(a) * 1.3 - 0.8, 0.9 - Math.abs(k) * 0.12);
+                h.rotation.z = -a * 0.6;
+                const hood = box(0.8, 0.9, 0.35, m.body); h.add(hood);
+                const under = box(0.5, 0.6, 0.1, m.accent); under.position.z = 0.2; h.add(under);
+                const snout = box(0.4, 0.3, 0.6, m.body); snout.position.set(0, 0.25, 0.45); h.add(snout);
+                [-1, 1].forEach(side => { const eye = box(0.1, 0.1, 0.12, m.eye); eye.position.set(side * 0.15, 0.36, 0.72); h.add(eye); });
+                const crest = box(0.16, 0.35, 0.16, m.accent); crest.position.set(0, 0.6, 0); h.add(crest);
+                this.head.add(h);
+            }
+            const flame = box(0.5, 0.9, 0.2, m.accent); flame.position.set(0, 2.6, 0.8); this.head.add(flame);
             this.group.add(this.head);
 
             this.segments = [];
@@ -14865,13 +15844,17 @@ const BLOCK = {
                 } else if (parts.length >= 3 && parts.every(v => !isNaN(parseFloat(v)))) {
                     teleport(parseFloat(parts[0]), parseFloat(parts[1]), parseFloat(parts[2]));
                     say('បានផ្លាស់ទី');
-                } else say('របៀបប្រើ៖ /tp end | stronghold | village | temple | home | <x> <y> <z>');
+                } else if ((parts[0] || '').toLowerCase() === 'patala') {
+                    if (!isPatalaRegion(player.pos.x, player.pos.z)) travelThroughNagaGate();
+                } else say('របៀបប្រើ៖ /tp end | patala | stronghold | village | temple | home | <x> <y> <z>');
                 break;
             }
             case 'summon': {                               // Khmer edition: /summon yeak|preay|tiger
-                const kinds = { yeak: YeakMob, preay: PreayMob, tiger: TigerMob, zombie: ZombieMob, skeleton: SkeletonMob, spider: SpiderMob, creeper: CreeperMob };
+                const kinds = { yeak: YeakMob, preay: PreayMob, tiger: TigerMob, zombie: ZombieMob, skeleton: SkeletonMob, spider: SpiderMob, creeper: CreeperMob,
+                    buffalo: BuffaloMob, elephant: ElephantMob, dog: DogMob, cat: CatMob, monkey: MonkeyMob, bat: BatMob, crocodile: CrocodileMob, cobra: CobraMob, ap: ApMob, shadow: ShadowMob,
+                    horse: HorseMob, cow: CowMob, pig: PigMob, sheep: SheepMob, chicken: ChickenMob, reahu: typeof ReahuMob === 'function' ? ReahuMob : YeakMob };
                 const Cls = kinds[(parts[0] || '').toLowerCase()];
-                if (!Cls) { say('របៀបប្រើ៖ /summon yeak | preay | tiger | zombie | skeleton | spider | creeper'); break; }
+                if (!Cls) { say('របៀបប្រើ៖ /summon ' + Object.keys(kinds).join(' | ')); break; }
                 const fx = -Math.sin(camera.rotation.y), fz = -Math.cos(camera.rotation.y);
                 const mx = player.pos.x + fx * 5, mz = player.pos.z + fz * 5;
                 const my = findSpawnSurface(world, Math.floor(mx), Math.floor(mz));
@@ -15077,7 +16060,7 @@ const BLOCK = {
                 const held = player.inventory.getSelectedSlot();
                 triggerToolAction(held && held.count > 0 ? held.type : BLOCK.AIR, { type: 'mob', mob: target });     // swing, slash effect and sound
                 const weapon = getToolInfo(held && held.count > 0 ? held.type : BLOCK.AIR);
-                target.takeDamage(weapon.damage, knock);
+                target.takeDamage(weapon.damage + (player.yantraTimer > 0 ? 2 : 0), knock);
                 if (weapon.kind !== 'hand') wearHeldTool(weapon.kind === 'sword' ? 1 : 2);
                 hitMob = true;
             }
@@ -15099,7 +16082,11 @@ const BLOCK = {
             if (tryLaunchBoat()) return;
             const mob = mobUnderCrosshair();
             if (mob && (mob.type === 'villager' || mob.type === 'trader')) openTrade(mob);      // right-click a villager or trader to trade
+            else if (mob && khUseOnMob(mob, player.inventory.getSelectedSlot())) { /* sheared, milked, leashed or saddled */ }
+            else if (mob && tryTamePet(mob, player.inventory.getSelectedSlot())) { /* fed a dog or cat */ }
+            else if (mob && tryMount(mob, player.inventory.getSelectedSlot())) { /* riding */ }
             else if (mob && tryFeedAnimal(mob)) { /* fed an animal */ }
+            else if (!aimedBlockIsInteractive() && khUseItem(player.inventory.getSelectedSlot())) { /* pearl, firework, crossbow, rod */ }
             else if (!tryWearHeldItem() && !tryBeginItemUse()) handleBlockPlacement();
         }
     });
@@ -15152,7 +16139,8 @@ const BLOCK = {
         if (eatState.t >= EAT_TIME) {
             if (player.eatFood(eatState.type) && !isCreative()) {
                 player.inventory.consumeSelectedItem();
-                if (eatState.type === BLOCK.COCONUT_WATER || eatState.type === BLOCK.PALM_JUICE) {      // the empty bottle comes back
+                if (FOOD[eatState.type].milk) giveOrDrop(BLOCK.BUCKET, 1);                               // the empty bucket comes back
+                if (eatState.type === BLOCK.COCONUT_WATER || eatState.type === BLOCK.PALM_JUICE || FOOD[eatState.type].bottle) {      // the empty bottle comes back
                     const left = player.inventory.addItem(BLOCK.BOTTLE, 1);
                     if (left > 0) dropItemInFront(BLOCK.BOTTLE, left);
                 }
@@ -15177,7 +16165,7 @@ const BLOCK = {
     function aimedBlockIsInteractive() {
         const hit = raycastVoxel(camera, world, 4.8);
         return hit.hit && (isBedPart(hit.blockType) || isDoor(hit.blockType) || hit.blockType === BLOCK.FURNACE ||
-            hit.blockType === BLOCK.CRAFTING_TABLE || hit.blockType === BLOCK.CHEST);
+            hit.blockType === BLOCK.CRAFTING_TABLE || hit.blockType === BLOCK.CHEST || khAimedInteractive(hit));
     }
     function tryBeginItemUse() {
         const slot = player.inventory.getSelectedSlot();
@@ -15347,7 +16335,7 @@ const BLOCK = {
     const HELD_SIZE = 0.22;
     function buildHeldShape(group, type, material) {
         for (const m of [...group.children]) { group.remove(m); m.geometry.dispose(); }
-        const placed = type === BLOCK.OAK_STAIRS ? stairId(1, false) : slabDef(type).bottom;      // stairs: the step toward +x
+        const placed = isStairItem(type) ? stairId(1, false, stairDef(type)) : slabDef(type).bottom;      // stairs: the step toward +x
         const t = getTileUV(getBlockFaceTile(placed, 'side'));
         const U = (f) => t.u0 + (t.u1 - t.u0) * f, V = (f) => t.v0 + (t.v1 - t.v0) * f;
         const noNeighbours = { getBlock: () => BLOCK.AIR };
@@ -15553,7 +16541,7 @@ const BLOCK = {
             return placeShapedBlock(id, r.x, r.y, r.z);
         }
         if (!freeAt(world.getBlock(px, py, pz))) return false;
-        const id = stairId(pl.facing, pl.top);
+        const id = stairId(pl.facing, pl.top, stairDef(slot.type));
         if (boxesHitPlayer(px, py, pz, blockBoxes(world, px, py, pz, id))) return false;
         return placeShapedBlock(id, px, py, pz);
     }
@@ -15666,7 +16654,7 @@ const BLOCK = {
     // slot in: apples drop from oak and dark oak only, spruce and birch give just their own sapling.
     const LEAF_TYPES = {
         // Khmer edition: oak gives only its sapling; each fruit comes from its own tree
-        oak_leaves:      { sapling: 'oak_sapling',      apple: false },
+        oak_leaves:      { sapling: 'oak_sapling',      apple: false, fruit: 'mango', fruitRate: 1 / 15 },
         apple_leaves:    { sapling: 'apple_sapling',    apple: false, fruit: 'apple', fruitRate: 1 / 8 },
         palm_leaves:     { sapling: 'palm_sapling',     apple: false, fruit: 'palm_fruit', fruitRate: 1 / 10 },
         coconut_leaves:  { sapling: 'coconut_sapling',  apple: false, fruit: 'coconut', fruitRate: 1 / 8 },
@@ -15739,6 +16727,12 @@ const BLOCK = {
         if (type === BLOCK.WHEAT_CROP_7) seeds = 1 + Math.floor(Math.random() * 3);
         else if (type === BLOCK.TALL_GRASS && Math.random() < 0.125) seeds = 1;
         if (seeds > 0) itemEntities.push(new ItemEntity(BLOCK.WHEAT_SEEDS, bx + 0.5, by + 0.5, bz + 0.5, scene, { count: seeds }));
+        if (type === BLOCK.GRAVEL && Math.random() < 0.1) itemEntities.push(new ItemEntity(BLOCK.FLINT, bx + 0.5, by + 0.5, bz + 0.5, scene));
+        const kd = KH_BY_ID[type];
+        if (kd && kd.dropCount) {
+            const more = kd.dropCount[0] - 1 + Math.floor(Math.random() * (kd.dropCount[1] - kd.dropCount[0] + 1));
+            if (more > 0) itemEntities.push(new ItemEntity(getDrop(type), bx + 0.5, by + 0.5, bz + 0.5, scene, { count: more }));
+        }
         if (type === BLOCK.COCONUT_CLUSTER || type === BLOCK.PALM_FRUIT_CLUSTER) {      // a bunch: 1-3 fruit in all
             const more = Math.floor(Math.random() * 3);
             if (more > 0) itemEntities.push(new ItemEntity(getDrop(type), bx + 0.5, by + 0.5, bz + 0.5, scene, { count: more }));
@@ -15817,6 +16811,14 @@ const BLOCK = {
             const ox = cx * CHUNK_SIZE_X, oz = cz * CHUNK_SIZE_Z;
             if (Math.abs(ox + 8 - player.pos.x) > 72 || Math.abs(oz + 8 - player.pos.z) > 72 || !world.getChunk(cx, cz)) continue;
             for (const [idx, type] of log) {
+                if (type === BLOCK.BAMBOO) {                     // bamboo grows up to 4 tall, faster beside water
+                    const y = Math.floor(idx / layer), rem = idx % layer;
+                    const x = ox + (rem % CHUNK_SIZE_X), z = oz + Math.floor(rem / CHUNK_SIZE_X);
+                    if (world.getBlock(x, y, z) !== BLOCK.BAMBOO || world.getBlock(x, y + 1, z) !== BLOCK.AIR) continue;
+                    let h = 1; while (h < 5 && world.getBlock(x, y - h, z) === BLOCK.BAMBOO) h++;
+                    if (h < 4 && Math.random() < 0.05) setAndShare(x, y + 1, z, BLOCK.BAMBOO);
+                    continue;
+                }
                 if (!(isCrop(type) && type !== BLOCK.WHEAT_CROP_7) && !isFarmland(type) && !isSapling(type)) continue;
                 const y = Math.floor(idx / layer), rem = idx % layer;
                 const x = ox + (rem % CHUNK_SIZE_X), z = oz + Math.floor(rem / CHUNK_SIZE_X);
@@ -15834,6 +16836,479 @@ const BLOCK = {
                 if (Math.random() < (below === BLOCK.FARMLAND_WET ? 0.07 : 0.035)) setAndShare(x, y, z, type + 1);
             }
         }
+    }
+
+
+    // ==========================================
+    // KHMER CONTENT v2: what the new blocks and items do
+    // ==========================================
+    function playerFacing() {
+        const yaw = camera.rotation.y, fx = -Math.sin(yaw), fz = -Math.cos(yaw);
+        return Math.abs(fx) > Math.abs(fz) ? (fx > 0 ? 1 : 3) : (fz > 0 ? 2 : 0);      // 0 N, 1 E, 2 S, 3 W
+    }
+    function giveOrDrop(type, count = 1) {
+        const left = player.inventory.addItem(type, count);
+        if (left > 0) dropItemInFront(type, left);
+        player.inventory.renderUI();
+    }
+    // Swaps one item in the selected stack for another (bucket -> milk bucket, ...)
+    function swapHeldOne(slot, to) {
+        if (isCreative()) { giveOrDrop(to, 1); return; }
+        if (slot.count === 1) { slot.type = to; slot.dmg = 0; player.inventory.renderUI(); }
+        else { slot.count--; giveOrDrop(to, 1); }
+    }
+    function khAimedInteractive(hit) {
+        const d = hit && hit.hit ? KH_BY_ID[hit.blockType] : null;
+        return !!(d && d.interactive);
+    }
+    function khPlayerOnLadder(p) {
+        for (const dy of [0.1, 1.0]) if (isLadder(world.getBlock(Math.floor(p.pos.x), Math.floor(p.pos.y + dy), Math.floor(p.pos.z)))) return true;
+        return false;
+    }
+
+    // ---------- placing ladders, gates, trapdoors, bamboo ----------
+    // Returns true when the held item is one of these (placed or not)
+    function khPlace(slot, hit, px, py, pz) {
+        const t = slot.type;
+        const free = (b) => b === BLOCK.AIR || b === BLOCK.WATER || (isFlora(b) && b !== BLOCK.TORCH && !LIGHT_EMISSION[b]);
+        const put = (id) => {
+            if (!free(world.getBlock(px, py, pz))) return false;
+            if (isSolid(id) && boxesHitPlayer(px, py, pz, blockBoxes(world, px, py, pz, id, true))) return false;
+            return placeShapedBlock(id, px, py, pz);
+        };
+        if (t === BLOCK.LADDER) {
+            // On the face you clicked: the ladder hangs on that wall. On a floor or ceiling it faces you.
+            let wall;
+            if (hit.normal.x > 0) wall = 3; else if (hit.normal.x < 0) wall = 1;
+            else if (hit.normal.z > 0) wall = 0; else if (hit.normal.z < 0) wall = 2;
+            else wall = playerFacing();
+            const [dx, dz] = FACING_STEP[wall];
+            if (!isOpaque(world.getBlock(px + dx, py, pz + dz)) && !isLadder(world.getBlock(px, py - 1, pz))) {
+                showNotification('ជណ្ដើរត្រូវការជញ្ជាំងរឹងដើម្បីពាក់'); return true;
+            }
+            put(BLOCK['LADDER_' + 'NESW'[wall]]);
+            return true;
+        }
+        if (t === BLOCK.FENCE_GATE) { put(playerFacing() % 2 === 0 ? BLOCK.GATE_X : BLOCK.GATE_Z); return true; }
+        if (t === BLOCK.TRAPDOOR) { put(BLOCK.TRAPDOOR_CLOSED); return true; }
+        if (t === BLOCK.BAMBOO) {
+            const g = world.getBlock(px, py - 1, pz);
+            if (![BLOCK.GRASS, BLOCK.DIRT, BLOCK.SAND, BLOCK.BAMBOO].includes(g)) { showNotification('ឫស្សីដុះលើដី ខ្សាច់ ឬស្មៅប៉ុណ្ណោះ'); return true; }
+            put(BLOCK.BAMBOO);
+            return true;
+        }
+        if (t === BLOCK.LAVA_BUCKET) {
+            if (free(world.getBlock(px, py, pz))) {
+                setAndShare(px, py, pz, BLOCK.LAVA);
+                if (!isCreative()) { slot.type = BLOCK.BUCKET; player.inventory.renderUI(); }
+                player.triggerSwing();
+            }
+            return true;
+        }
+        return false;
+    }
+
+    // ---------- right-click on one of the new blocks ----------
+    const primedKegs = [];
+    function khInteractBlock(hit, slot) {
+        const d = KH_BY_ID[hit.blockType];
+        const held = slot && slot.count > 0 ? slot.type : BLOCK.AIR;
+        const { bx: x, by: y, bz: z } = hit;
+        // Flint and steel on obsidian lights a naga gate inside an obsidian frame
+        if (held === BLOCK.FLINT_AND_STEEL && hit.blockType === BLOCK.OBSIDIAN) {
+            if (tryLightNagaGate(x + hit.normal.x, y + hit.normal.y, z + hit.normal.z)) { wearHeldTool(1); player.triggerSwing(); }
+            else showNotification('សង់ស៊ុមថ្មកញ្ចក់ខ្មៅ (ខាងក្នុង ២×៣) ជាមុនសិន');
+            return true;
+        }
+        if (!d || !d.interactive) return false;
+        if (isGate(hit.blockType)) {
+            const open = !d.open;
+            setAndShare(x, y, z, BLOCK['GATE_' + (d.gateAxis === 0 ? 'X' : 'Z') + (open ? '_OPEN' : '')]);
+            audio.playDoor(open); player.triggerSwing();
+            return true;
+        }
+        if (isTrapdoor(hit.blockType)) {
+            setAndShare(x, y, z, d.open ? BLOCK.TRAPDOOR_CLOSED : BLOCK['TRAPDOOR_OPEN_' + 'NESW'[playerFacing()]]);
+            audio.playDoor(!d.open); player.triggerSwing();
+            return true;
+        }
+        switch (hit.blockType) {
+            case BLOCK.YANTRA_TABLE: {
+                if (!isCreative() && player.xpLevel < 3) { showNotification('ត្រូវការកម្រិតបទពិសោធន៍ ៣ ដើម្បីទទួលយ័ន្ត'); return true; }
+                if (!isCreative()) { player.xpLevel -= 3; player.renderSurvivalHUD(); }
+                player.yantraTimer = 300;
+                for (let i = 0; i < 12; i++) particleMgr.spawnHeart(x + Math.random(), y + 1.2 + Math.random() * 0.6, z + Math.random());
+                audio.playLevelUp();
+                showToast({ icon: getToastIcon('info'), kind: 'unlock', key: 'yantra', duration: 4500, title: 'យ័ន្តការពារ', text: 'ការពារ +៣០% និងវាយ +២ រយៈពេល ៥ នាទី' });
+                return true;
+            }
+            case BLOCK.FIRECRACKER_KEG:
+                if (held !== BLOCK.FLINT_AND_STEEL) return false;
+                setAndShare(x, y, z, BLOCK.AIR);
+                primeKeg(x, y, z);
+                wearHeldTool(1); player.triggerSwing();
+                return true;
+            case BLOCK.WATER_JAR:
+                if (held !== BLOCK.BUCKET) return false;
+                swapHeldOne(slot, BLOCK.WATER_BUCKET); audio.playSplash(); player.triggerSwing();
+                return true;
+            case BLOCK.HERBAL_POT:
+                if (held !== BLOCK.BOTTLE) { showNotification('កាន់ដប ហើយមានស្ករ ១ ដើម្បីស្លថ្នាំបុរាណ'); return true; }
+                if (!isCreative() && invCountOf(BLOCK.SUGAR) < 1) { showNotification('ត្រូវការស្ករ ១ ដើម្បីស្លថ្នាំ'); return true; }
+                if (!isCreative()) invTake(BLOCK.SUGAR, 1);
+                swapHeldOne(slot, BLOCK.HERBAL_POTION);
+                for (let i = 0; i < 5; i++) particleMgr.spawnFlameParticle(x + 0.5, y + 0.9, z + 0.5);
+                audio.playGulp(); player.triggerSwing();
+                return true;
+            case BLOCK.ANVIL: {
+                const tool = TOOLS[held];
+                if (!tool || !(slot.dmg > 0)) { showNotification('កាន់ឧបករណ៍ដែលខូច ដើម្បីជួសជុល'); return true; }
+                if (!isCreative() && player.xpLevel < 1) { showNotification('ត្រូវការកម្រិតបទពិសោធន៍ ១ ដើម្បីជួសជុល'); return true; }
+                if (!isCreative()) { player.xpLevel -= 1; player.renderSurvivalHUD(); }
+                slot.dmg = 0; player.inventory.renderUI();
+                audio.playEquip(); player.triggerSwing();
+                showNotification(`បានជួសជុល${BLOCK_NAMES[held]} ពេញលេញ`);
+                return true;
+            }
+            case BLOCK.CAMPFIRE: {
+                const cooked = SMELTING[held];
+                if (!cooked || !FOOD[cooked]) return false;
+                if (!isCreative()) player.inventory.consumeSelectedItem();
+                giveOrDrop(cooked, 1);
+                for (let i = 0; i < 6; i++) particleMgr.spawnFlameParticle(x + 0.5, y + 0.5, z + 0.5);
+                audio.playPlace(BLOCK.WOOD_PLANKS); player.triggerSwing();
+                showNotification(`បានអាំង ${BLOCK_NAMES[cooked]}`);
+                return true;
+            }
+            case BLOCK.OX_CART:
+                openChest(x, y, z);
+                return true;
+        }
+        return false;
+    }
+
+    // ---------- a lit firecracker keg: flashes for 3 seconds, then blows up ----------
+    function primeKeg(x, y, z) {
+        const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.98, 0.98, 0.98), new THREE.MeshLambertMaterial({ color: 0xc82828, emissive: 0x000000 }));
+        mesh.position.set(x + 0.5, y + 0.5, z + 0.5);
+        scene.add(mesh);
+        primedKegs.push({ x, y, z, mesh, t: 3 });
+        audio.playHiss ? audio.playHiss(1) : AudioManager.playSound('creeper_hiss');
+    }
+    function updateKegs(dt) {
+        for (let i = primedKegs.length - 1; i >= 0; i--) {
+            const k = primedKegs[i];
+            k.t -= dt;
+            k.mesh.material.emissive.setHex(Math.floor(k.t * 6) % 2 ? 0xffffff : 0x000000);
+            k.mesh.scale.setScalar(1 + Math.max(0, 0.6 - k.t) * 0.2);
+            if (k.t <= 0) {
+                scene.remove(k.mesh); k.mesh.geometry.dispose();
+                primedKegs.splice(i, 1);
+                triggerCreeperExplosion(k.x + 0.5, k.y + 0.5, k.z + 0.5, 4, {});
+            }
+        }
+    }
+
+    // ---------- Naga gate (the way to Patala): an obsidian frame, inside 2-4 wide and 3-5 tall, lit with flint and steel ----------
+    function tryLightNagaGate(x, y, z) {
+        if (world.getBlock(x, y, z) !== BLOCK.AIR) return false;
+        for (const axis of [0, 1]) {
+            const [ax, az] = axis === 0 ? [1, 0] : [0, 1];
+            // drop to the floor of the opening, then slide to its left edge
+            let fy = y; while (fy > 0 && world.getBlock(x, fy - 1, z) === BLOCK.AIR && y - fy < 5) fy--;
+            if (world.getBlock(x, fy - 1, z) !== BLOCK.OBSIDIAN) continue;
+            let lx = x, lz = z, n = 0;
+            while (world.getBlock(lx - ax, fy, lz - az) === BLOCK.AIR && n++ < 4) { lx -= ax; lz -= az; }
+            if (world.getBlock(lx - ax, fy, lz - az) !== BLOCK.OBSIDIAN) continue;
+            let w = 0; while (w < 5 && world.getBlock(lx + ax * w, fy, lz + az * w) === BLOCK.AIR) w++;
+            let h = 0; while (h < 6 && world.getBlock(lx, fy + h, lz) === BLOCK.AIR) h++;
+            if (w < 2 || w > 4 || h < 3 || h > 5) continue;
+            let ok = true;
+            for (let i = 0; i < w && ok; i++) for (let j = 0; j < h && ok; j++) if (world.getBlock(lx + ax * i, fy + j, lz + az * i) !== BLOCK.AIR) ok = false;
+            for (let i = 0; i < w && ok; i++) if (world.getBlock(lx + ax * i, fy - 1, lz + az * i) !== BLOCK.OBSIDIAN || world.getBlock(lx + ax * i, fy + h, lz + az * i) !== BLOCK.OBSIDIAN) ok = false;
+            for (let j = 0; j < h && ok; j++) if (world.getBlock(lx - ax, fy + j, lz - az) !== BLOCK.OBSIDIAN || world.getBlock(lx + ax * w, fy + j, lz + az * w) !== BLOCK.OBSIDIAN) ok = false;
+            if (!ok) continue;
+            const gate = axis === 0 ? BLOCK.NAGA_GATE_X : BLOCK.NAGA_GATE_Z;
+            for (let i = 0; i < w; i++) for (let j = 0; j < h; j++) setAndShare(lx + ax * i, fy + j, lz + az * i, gate);
+            audio.playLevelUp();
+            showNotification('ទ្វារបាតាលបានបើក! ដើរចូលដើម្បីទៅឋានបាតាល');
+            return true;
+        }
+        return false;
+    }
+
+    // ---------- right-click an animal with shears, a bucket, a rope or a saddle ----------
+    function khUseOnMob(mob, slot) {
+        if (!slot || slot.count <= 0 || mob.isHostile) return false;
+        const t = slot.type;
+        if (t === BLOCK.SHEARS && mob.type === 'sheep') {
+            if (mob.shearedTimer > 0) { showNotification('ចៀមនេះមិនទាន់ដុះរោមវិញទេ'); return true; }
+            mob.shearedTimer = 180;
+            const n = 1 + Math.floor(Math.random() * 3);
+            itemEntities.push(new ItemEntity(BLOCK.WOOL, mob.pos.x, mob.pos.y + 1, mob.pos.z, scene, { count: n }));
+            wearHeldTool(1); player.triggerSwing();
+            AudioManager.playSound('sheep_idle', mobSoundVol(mob.pos));
+            return true;
+        }
+        if (t === BLOCK.BUCKET && (mob.type === 'cow' || mob.type === 'buffalo') && !mob.isBaby) {
+            swapHeldOne(slot, BLOCK.MILK_BUCKET); player.triggerSwing();
+            AudioManager.playSound('cow_idle', mobSoundVol(mob.pos));
+            return true;
+        }
+        if (t === BLOCK.ROPE && mob.type !== 'villager' && mob.type !== 'trader' && mob.type !== 'golem') {
+            if (mob.leashed) { mob.leashed = false; giveOrDrop(BLOCK.ROPE, 1); showNotification('បានដោះខ្សែ'); }
+            else { mob.leashed = true; if (!isCreative()) player.inventory.consumeSelectedItem(); showNotification('បានចងសត្វ៖ វានឹងដើរតាមអ្នក'); }
+            player.triggerSwing();
+            return true;
+        }
+        if (t === BLOCK.SADDLE && (mob.type === 'horse' || mob.type === 'elephant')) {
+            if (mob.saddled) { showNotification('មានកែបរួចហើយ'); return true; }
+            mob.saddled = true;
+            if (!isCreative()) player.inventory.consumeSelectedItem();
+            player.triggerSwing(); audio.playEquip();
+            showNotification('បានដាក់កែប');
+            return true;
+        }
+        return false;
+    }
+
+    // ---------- items used without aiming at a block ----------
+    const fishing = { active: false, bobber: null, t: 0, bite: 0 };
+    let crossbowCooldown = 0;
+    const fireworks = [];
+    function khUseItem(slot) {
+        if (!slot || slot.count <= 0) return false;
+        const t = slot.type;
+        if (t === BLOCK.NAGA_PEARL) {
+            const hit = raycastVoxel(camera, world, 40);
+            if (!hit.hit) { showNotification('មើលទៅដីដែលនៅជិត (៤០ ប្លុក)'); return true; }
+            let tx = hit.bx + hit.normal.x, ty = hit.by + hit.normal.y, tz = hit.bz + hit.normal.z;
+            for (let k = 0; k < 4 && (isSolid(world.getBlock(tx, ty, tz)) || isSolid(world.getBlock(tx, ty + 1, tz))); k++) ty++;
+            while (ty > 1 && !isSolid(world.getBlock(tx, ty - 1, tz)) && hit.normal.y === 0) ty--;
+            for (let i = 0; i < 10; i++) particleMgr.spawnHeart(player.pos.x, player.pos.y + 1, player.pos.z);
+            player.pos.set(tx + 0.5, ty, tz + 0.5); player.vel.set(0, 0, 0);
+            if (!isCreative()) { player.inventory.consumeSelectedItem(); player.takeDamage(2, 'fall'); }
+            audio.playLevelUp();
+            return true;
+        }
+        if (t === BLOCK.FIREWORK) {
+            launchFirework();
+            if (!isCreative()) player.inventory.consumeSelectedItem();
+            player.triggerSwing();
+            return true;
+        }
+        if (t === BLOCK.CROSSBOW) {
+            if (crossbowCooldown > 0) return true;
+            if (!isCreative() && invCountOf(BLOCK.ARROW) <= 0) { showNotification('អ្នកត្រូវការព្រួញដើម្បីប្រើស្នា'); return true; }
+            const dir = new THREE.Vector3(); camera.getWorldDirection(dir);
+            const from = camera.position.clone().addScaledVector(dir, 0.6); from.y -= 0.1;
+            mobMgr.spawnPlayerArrow(from, dir, 1);
+            const a = mobMgr.arrows[mobMgr.arrows.length - 1];
+            if (a) a.dmg = 9;                           // the crossbow hits harder than a full bow draw
+            if (!isCreative()) { invTake(BLOCK.ARROW, 1); player.inventory.renderUI(); }
+            wearHeldTool(1);
+            AudioManager.playSound('bow_release', 1, 1);
+            player.triggerSwing();
+            crossbowCooldown = 1.1;
+            return true;
+        }
+        if (t === BLOCK.FISHING_ROD) { useFishingRod(); return true; }
+        return false;
+    }
+
+    function useFishingRod() {
+        if (fishing.active) {                           // reel in
+            const caught = fishing.bite > 0;
+            endFishing();
+            player.triggerSwing();
+            if (!caught) { showNotification('មិនទាន់មានត្រីស៊ីទេ'); return; }
+            const r = Math.random();
+            const loot = r < 0.8 ? BLOCK.RAW_FISH : r < 0.88 ? BLOCK.BONE : r < 0.94 ? BLOCK.STRING : r < 0.98 ? BLOCK.LEATHER : BLOCK.SAPPHIRE;
+            giveOrDrop(loot, 1);
+            audio.playPickup();
+            showNotification(`ស្ទូចបាន ${BLOCK_NAMES[loot]}!`);
+            if (!isCreative()) player.addXP(1 + Math.floor(Math.random() * 3));
+            wearHeldTool(1);
+            return;
+        }
+        const wh = raycastVoxel(camera, world, 14, true);
+        if (!wh.hit || wh.blockType !== BLOCK.WATER) { showNotification('បោះសន្ទូចទៅលើទឹក'); return; }
+        let top = wh.by;
+        while (world.getBlock(wh.bx, top + 1, wh.bz) === BLOCK.WATER) top++;
+        const bob = new THREE.Group();
+        const red = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.12, 0.16), new THREE.MeshLambertMaterial({ color: 0xd02020 }));
+        const white = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.08, 0.16), new THREE.MeshLambertMaterial({ color: 0xf0f0f0 }));
+        white.position.y = 0.1; bob.add(red, white);
+        bob.position.set(wh.bx + 0.5, top + 0.95, wh.bz + 0.5);
+        scene.add(bob);
+        Object.assign(fishing, { active: true, bobber: bob, t: 3 + Math.random() * 6, bite: 0, baseY: top + 0.95 });
+        audio.playSplash();
+        player.triggerSwing();
+    }
+    function endFishing() {
+        if (fishing.bobber) { scene.remove(fishing.bobber); fishing.bobber = null; }
+        fishing.active = false; fishing.bite = 0;
+    }
+    function updateFishing(dt) {
+        if (!fishing.active) return;
+        const slot = player.inventory.getSelectedSlot();
+        if (!slot || slot.type !== BLOCK.FISHING_ROD || player.dead || fishing.bobber.position.distanceTo(player.pos) > 20) { endFishing(); return; }
+        if (fishing.bite > 0) {
+            fishing.bite -= dt;
+            fishing.bobber.position.y = fishing.baseY - 0.18;
+            if (fishing.bite <= 0) { fishing.t = 3 + Math.random() * 6; fishing.bobber.position.y = fishing.baseY; }      // it got away
+            return;
+        }
+        fishing.t -= dt;
+        fishing.bobber.position.y = fishing.baseY + Math.sin(performance.now() / 300) * 0.03;
+        if (fishing.t <= 0) {
+            fishing.bite = 1.4;
+            audio.playSplash();
+            for (let i = 0; i < 4; i++) particleMgr.spawnUnderwaterBubble ? null : null;
+            showNotification('ត្រីស៊ីហើយ! ចុចស្ដាំឥឡូវនេះ');
+        }
+    }
+
+    // ---------- fireworks: a rocket that climbs, then bursts into coloured sparks ----------
+    function launchFirework() {
+        const dir = new THREE.Vector3(); camera.getWorldDirection(dir);
+        const start = camera.position.clone().addScaledVector(dir, 1.5);
+        const rocket = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.3, 0.12), new THREE.MeshBasicMaterial({ color: 0xd03030 }));
+        rocket.position.copy(start);
+        scene.add(rocket);
+        fireworks.push({ rocket, t: 1.3, sparks: null, color: [0xff4040, 0xffd040, 0x40c0ff, 0x60ff60, 0xff60e0][Math.floor(Math.random() * 5)] });
+        AudioManager.playSound('bow_release', 0.6, 1);
+    }
+    function updateFireworks(dt) {
+        for (let i = fireworks.length - 1; i >= 0; i--) {
+            const f = fireworks[i];
+            if (f.rocket) {
+                f.t -= dt;
+                f.rocket.position.y += 14 * dt;
+                if (Math.random() < 0.6) particleMgr.spawnFlameParticle(f.rocket.position.x, f.rocket.position.y - 0.2, f.rocket.position.z);
+                if (f.t <= 0) {
+                    const n = 70, pos = new Float32Array(n * 3), vel = [];
+                    for (let k = 0; k < n; k++) {
+                        pos.set([f.rocket.position.x, f.rocket.position.y, f.rocket.position.z], k * 3);
+                        const v = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize().multiplyScalar(6 + Math.random() * 3);
+                        vel.push(v);
+                    }
+                    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+                    const pts = new THREE.Points(g, new THREE.PointsMaterial({ color: f.color, size: 0.35, transparent: true, opacity: 1, depthWrite: false }));
+                    scene.add(pts);
+                    scene.remove(f.rocket); f.rocket.geometry.dispose(); f.rocket = null;
+                    f.sparks = { pts, vel, life: 1.6 };
+                    audio.playExplosion(0.35, 0.6);
+                }
+            } else if (f.sparks) {
+                const s = f.sparks, a = s.pts.geometry.attributes.position;
+                s.life -= dt;
+                for (let k = 0; k < s.vel.length; k++) {
+                    s.vel[k].y -= 4 * dt; s.vel[k].multiplyScalar(Math.pow(0.4, dt));
+                    a.setXYZ(k, a.getX(k) + s.vel[k].x * dt, a.getY(k) + s.vel[k].y * dt, a.getZ(k) + s.vel[k].z * dt);
+                }
+                a.needsUpdate = true;
+                s.pts.material.opacity = Math.max(0, s.life / 1.6);
+                if (s.life <= 0) { scene.remove(s.pts); s.pts.geometry.dispose(); fireworks.splice(i, 1); }
+            }
+        }
+    }
+
+    // ---------- compass, clock and map: a small panel while one is in your hand ----------
+    let khHud = null, mapTimer = 0;
+    function ensureKhHud() {
+        if (khHud) return khHud;
+        khHud = document.createElement('div');
+        khHud.id = 'kh-item-hud';
+        khHud.style.cssText = 'position:fixed;top:56px;right:16px;z-index:30;display:none;padding:8px 10px;border-radius:8px;background:rgba(20,16,12,.72);' +
+            'color:#f4ead2;font:14px "Kantumruy Pro",sans-serif;text-align:center;border:2px solid #c8901a;pointer-events:none;min-width:120px';
+        khHud.innerHTML = '<div class="kh-hud-title"></div><div class="kh-hud-body"></div>';
+        document.body.appendChild(khHud);
+        return khHud;
+    }
+    function updateKhHud(dt) {
+        const slot = player.inventory.getSelectedSlot();
+        const t = slot && slot.count > 0 ? slot.type : BLOCK.AIR;
+        const hud = ensureKhHud();
+        const show = isGameRunning && !gui.open && (t === BLOCK.COMPASS || t === BLOCK.CLOCK || t === BLOCK.MAP);
+        hud.style.display = show ? 'block' : 'none';
+        if (!show) { hud.dataset.mode = ''; return; }
+        const title = hud.firstChild, body = hud.lastChild;
+        if (t === BLOCK.COMPASS) {
+            const sp = player.spawnPoint || { x: 0, z: 0 };
+            const dx = sp.x + 0.5 - player.pos.x, dz = sp.z + 0.5 - player.pos.z;
+            const dist = Math.round(Math.hypot(dx, dz));
+            const yaw = camera.rotation.y;
+            const ang = Math.atan2(dx, dz) - Math.atan2(-Math.sin(yaw), -Math.cos(yaw));
+            if (hud.dataset.mode !== 'c') { hud.dataset.mode = 'c'; title.textContent = 'ត្រីវិស័យ'; body.innerHTML = '<div style="font-size:34px;line-height:40px;color:#e03030">▲</div><div></div>'; }
+            body.firstChild.style.transform = `rotate(${(-ang * 180 / Math.PI).toFixed(0)}deg)`;
+            body.lastChild.textContent = inEnd ? 'វិលវល់...' : `ផ្ទះ ${dist} ប្លុក`;
+        } else if (t === BLOCK.CLOCK) {
+            const h = timeEngine.timeOfDay, day = h >= 6 && h < 18;
+            if (hud.dataset.mode !== 'k') { hud.dataset.mode = 'k'; title.textContent = 'នាឡិកា'; }
+            const hh = Math.floor(h), mm = Math.floor((h - hh) * 60);
+            body.innerHTML = `<div style="font-size:30px">${day ? '☀' : '☾'}</div><div>${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')} · ${day ? 'ថ្ងៃ' : 'យប់'}</div>`;
+        } else {
+            mapTimer -= dt;
+            if (hud.dataset.mode !== 'm') { hud.dataset.mode = 'm'; title.textContent = 'ផែនទី'; body.innerHTML = '<canvas width="64" height="64" style="width:160px;height:160px;image-rendering:pixelated"></canvas>'; mapTimer = 0; }
+            if (mapTimer <= 0) { mapTimer = 1; drawKhMap(body.firstChild); }
+        }
+    }
+    function drawKhMap(canvas) {
+        const g = canvas.getContext('2d'), img = g.createImageData(64, 64);
+        const cx = Math.floor(player.pos.x), cz = Math.floor(player.pos.z);
+        for (let j = 0; j < 64; j++) for (let i = 0; i < 64; i++) {
+            const wx = cx + i - 32, wz = cz + j - 32;
+            let c = [40, 34, 28];
+            if (world.getChunkAtWorld(wx, wz)) {
+                for (let y = WORLD_HEIGHT - 1; y >= 0; y--) {
+                    const b = world.getBlock(wx, y, wz);
+                    if (b === BLOCK.AIR || b === BLOCK.TALL_GRASS) continue;
+                    const cols = getTileColors(getBlockFaceTile(b, 'top'));
+                    const k = cols && cols.length ? cols[Math.floor(cols.length / 2)] : [120, 120, 120];
+                    const shade = 0.75 + (y - SEA_LEVEL) * 0.03;
+                    c = [k[0] * shade, k[1] * shade, k[2] * shade];
+                    break;
+                }
+            }
+            img.data.set([c[0], c[1], c[2], 255], (j * 64 + i) * 4);
+        }
+        g.putImageData(img, 0, 0);
+        g.fillStyle = '#ff2020'; g.fillRect(31, 31, 3, 3);
+    }
+
+    // ---------- every frame ----------
+    function updateKhContent(dt) {
+        crossbowCooldown = Math.max(0, crossbowCooldown - dt);
+        updateRiding();
+        updatePatala(dt);
+        if (player.yantraTimer > 0) {
+            player.yantraTimer -= dt;
+            if (player.yantraTimer <= 0) showNotification('យ័ន្តការពារបានអស់ហើយ');
+        }
+        updateKegs(dt);
+        updateFishing(dt);
+        updateFireworks(dt);
+        updateKhHud(dt);
+        // Animals: chickens lay eggs, sheep grow their wool back, leashed animals follow you
+        for (const m of mobMgr.mobs) {
+            if (m.isDead) continue;
+            if (m.shearedTimer > 0) m.shearedTimer -= dt;
+            if (m.type === 'chicken' && !m.isBaby) {
+                if (m.eggTimer === undefined) m.eggTimer = 300 + Math.random() * 300;
+                m.eggTimer -= dt;
+                if (m.eggTimer <= 0) { m.eggTimer = 300 + Math.random() * 300; itemEntities.push(new ItemEntity(BLOCK.EGG, m.pos.x, m.pos.y + 0.3, m.pos.z, scene)); }
+            }
+            if (m.leashed) {
+                const d = Math.hypot(player.pos.x - m.pos.x, player.pos.z - m.pos.z);
+                if (d > 14) { m.leashed = false; itemEntities.push(new ItemEntity(BLOCK.ROPE, m.pos.x, m.pos.y + 0.5, m.pos.z, scene)); showNotification('ខ្សែពួរដាច់ហើយ'); }
+                else if (d > 3) mobMgr.walkToward(m, player.pos, 1.2);
+            }
+        }
+        // Standing in a naga gate for a moment takes you to Patala (and back)
+        const inGate = isNagaGate(world.getBlock(Math.floor(player.pos.x), Math.floor(player.pos.y + 0.5), Math.floor(player.pos.z)));
+        player.gateTime = inGate ? (player.gateTime || 0) + dt : 0;
+        if (player.gateTime > 1.5 && typeof travelThroughNagaGate === 'function') { player.gateTime = -4; travelThroughNagaGate(); }
     }
 
     function handleBlockPlacement() {
@@ -15864,6 +17339,13 @@ const BLOCK = {
         // Empty bucket: scoop up the water you are looking at (water is not solid, so it needs its own ray)
         if (slot && slot.count > 0 && slot.type === BLOCK.BUCKET) {
             const wh = raycastVoxel(camera, world, 4.8, true);
+            if (wh.hit && wh.blockType === BLOCK.LAVA) {
+                setAndShare(wh.bx, wh.by, wh.bz, BLOCK.AIR);
+                swapHeldOne(slot, BLOCK.LAVA_BUCKET);
+                player.triggerSwing();
+                return;
+            }
+            if (wh.hit && khInteractBlock(wh, slot)) return;            // a water jar
             if (wh.hit && wh.blockType === BLOCK.WATER) {
                 setAndShare(wh.bx, wh.by, wh.bz, BLOCK.AIR);
                 if (slot.count === 1) { slot.type = BLOCK.WATER_BUCKET; slot.dmg = 0; }
@@ -15886,6 +17368,7 @@ const BLOCK = {
         if (hit.blockType === BLOCK.FURNACE) { openFurnace(hit.bx, hit.by, hit.bz); return; }
         if (hit.blockType === BLOCK.CHEST) { openChest(hit.bx, hit.by, hit.bz); return; }
         if (isDoor(hit.blockType)) { toggleDoor(hit.bx, hit.by, hit.bz); player.triggerSwing(); return; }
+        if (khInteractBlock(hit, slot)) return;
         if (useFarmingItem(slot, hit)) return;
 
         if (hit.blockType === BLOCK.CRAFTING_TABLE) {
@@ -15912,8 +17395,9 @@ const BLOCK = {
             return;
         }
 
+        if (slot && slot.count > 0 && khPlace(slot, hit, placeX, placeY, placeZ)) return;
         // Stairs and slabs check the player against their real shape, so they come before the full-block test below
-        if (slot && slot.count > 0 && (slot.type === BLOCK.OAK_STAIRS || isSlabItem(slot.type))) {
+        if (slot && slot.count > 0 && (isStairItem(slot.type) || isSlabItem(slot.type))) {
             placeStairOrSlab(hit, slot, placeX, placeY, placeZ);
             return;
         }
@@ -15972,6 +17456,7 @@ const BLOCK = {
     let lastWaterAnimTime = 0;
     let netSyncTimer = 0;
 
+    let waterArt = null;
     function updateWaterTexture(t) {
         if (t - lastWaterAnimTime < 120) return;
         lastWaterAnimTime = t;
@@ -15980,6 +17465,17 @@ const BLOCK = {
         const ty = Math.floor(TILES.WATER / TILES_PER_ROW) * TILE_PX;
         const imgData = atlas.ctx.createImageData(TILE_PX, TILE_PX);
         const d = imgData.data;
+        const art = waterArt || (waterArt = window.ANGKOR_ART ? decodeArt(window.ANGKOR_ART.tiles.WATER) : null);
+        if (art) {
+            const ox = Math.floor(timeSec * 2) % TILE_PX, oy = Math.floor(timeSec) % TILE_PX;
+            for (let py = 0; py < TILE_PX; py++) for (let px = 0; px < TILE_PX; px++) {
+                const s = (((py + oy) % TILE_PX) * TILE_PX + (px + ox) % TILE_PX) * 4, o = (py * TILE_PX + px) * 4;
+                d[o] = art.px[s]; d[o + 1] = art.px[s + 1]; d[o + 2] = art.px[s + 2]; d[o + 3] = 170;
+            }
+            atlas.ctx.putImageData(imgData, tx, ty);
+            atlas.texture.needsUpdate = true;
+            return;
+        }
 
         for (let py = 0; py < TILE_PX; py++) {
             for (let px = 0; px < TILE_PX; px++) {
@@ -16024,11 +17520,14 @@ const BLOCK = {
         else weather.rainLines.visible = false;
 
         // The End has no sun, moon or clouds, just a dim violet void
-        timeEngine.celestialGroup.visible = !inEnd && weather.level < 0.9;
-        cloudGroup.visible = !inEnd;
+        timeEngine.celestialGroup.visible = !inEnd && !inPatala && weather.level < 0.9;
+        cloudGroup.visible = !inEnd && !inPatala;
         if (inEnd) {
             ambientLight.intensity = 0.62;
             sunLight.intensity = 0.3;
+        } else if (inPatala) {
+            ambientLight.intensity = 0.55;
+            sunLight.intensity = 0.15;
         }
 
         // Underwater Atmosphere vs Daylight
@@ -16044,6 +17543,12 @@ const BLOCK = {
                 camera.getWorldDirection(fwd);
                 particleMgr.spawnUnderwaterBubble(camera.position, fwd);
             }
+        } else if (inPatala) {
+            if (underwaterOverlay) underwaterOverlay.style.display = 'none';
+            scene.background.setHex(0x2a0806);
+            scene.fog.color.setHex(0x2a0806);
+            scene.fog.near = 10;
+            scene.fog.far = 56;
         } else if (inEnd) {
             if (underwaterOverlay) underwaterOverlay.style.display = 'none';
             scene.background.setHex(0x0b0714);
@@ -16057,7 +17562,7 @@ const BLOCK = {
             scene.fog.near = 28;
             scene.fog.far = GameOptions.renderDistance * 16 + 8;
         }
-        if (isGameRunning && !inEnd) weather.applyAtmosphere(ambientLight, sunLight);
+        if (isGameRunning && !inEnd && !inPatala) weather.applyAtmosphere(ambientLight, sunLight);
         if (isGameRunning) applyCaveDarkness(dt);
 
         if (!isGameRunning) {
@@ -16184,7 +17689,7 @@ const BLOCK = {
                             if (isDoor(rayHit.blockType)) removeDoorPartner(rayHit.bx, rayHit.by, rayHit.bz, rayHit.blockType);
                             if (isBananaPlant(rayHit.blockType)) removeBananaPartner(rayHit.bx, rayHit.by, rayHit.bz, rayHit.blockType);
                             if (rayHit.blockType === BLOCK.FURNACE) dropFurnaceContents(rayHit.bx, rayHit.by, rayHit.bz);
-                            if (rayHit.blockType === BLOCK.CHEST) dropChestContents(rayHit.bx, rayHit.by, rayHit.bz);
+                            if (rayHit.blockType === BLOCK.CHEST || rayHit.blockType === BLOCK.OX_CART) dropChestContents(rayHit.bx, rayHit.by, rayHit.bz);
                             // Tools wear out: one use per block (two for a sword), none for blocks that break instantly
                             if (TOOLS[tool.kind === 'hand' ? 0 : heldSlot.type] && hardness > 0.1) wearHeldTool(tool.kind === 'sword' ? 2 : 1);
                             audio.playActionSound(tool.kind, rayHit.blockType, 'break');
@@ -16211,7 +17716,9 @@ const BLOCK = {
                                 if (!isCreative()) dropExtras(aboveType, rayHit.bx, rayHit.by + 1, rayHit.bz);
                             }
 
-                            if (isLeafBlock(rayHit.blockType) && !isCreative()) {
+                            if (isLeafBlock(rayHit.blockType) && !isCreative() && heldSlot && heldSlot.count > 0 && heldSlot.type === BLOCK.SHEARS) {
+                                itemEntities.push(new ItemEntity(rayHit.blockType, rayHit.bx + 0.5, rayHit.by + 0.5, rayHit.bz + 0.5, scene));      // shears keep the leaves
+                            } else if (isLeafBlock(rayHit.blockType) && !isCreative()) {
                                 damageLeafBlock(rayHit.blockType, null, { x: rayHit.bx, y: rayHit.by, z: rayHit.bz });
                             }
 
@@ -16246,6 +17753,7 @@ const BLOCK = {
         if (cropTimer > 2) { cropTimer = 0; tickFarms(); }
         tickFurnaces(dt);
         updateThrownEyes(dt);
+        if (isGameRunning) updateKhContent(dt);
         particleMgr.update(dt, world);
 
         for (let i = itemEntities.length - 1; i >= 0; i--) {
